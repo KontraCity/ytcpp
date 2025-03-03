@@ -3,24 +3,13 @@
 #include <fmt/format.h>
 
 #include <ytcpp/core/error.hpp>
-#include <ytcpp/core/js.hpp>
+#include <ytcpp/core/cache.hpp>
 using namespace ytcpp;
 
 int main() {
     try {
-        Js::Interpreter interpreter;
-        while (true) {
-            std::string input;
-            std::getline(std::cin, input);
-
-            try {
-                std::string output = interpreter.execute(input);
-                fmt::print("{}", output);
-            }
-            catch (const Js::Error& error) {
-                fmt::print(stderr, "Error: {}\n", error.what());
-            }
-        }
+        Cache cache;
+        fmt::print("Authorized? {}\n", cache.auth().authorized ? "yes" : "no");
     }
     catch (const Error& error) {
         fmt::print(stderr, "Fatal ytcpp::Error!\n");
