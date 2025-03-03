@@ -1,10 +1,10 @@
-#include "ytcpp/curl.hpp"
+#include "ytcpp/core/curl.hpp"
 
 #include <memory>
 
 #include <curl/curl.h>
 
-#include "ytcpp/error.hpp"
+#include "ytcpp/core/error.hpp"
 
 namespace ytcpp {
 

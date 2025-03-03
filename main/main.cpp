@@ -1,13 +1,26 @@
+#include <iostream>
+
 #include <fmt/format.h>
 
-#include <ytcpp/curl.hpp>
-#include <ytcpp/error.hpp>
+#include <ytcpp/core/error.hpp>
+#include <ytcpp/core/js.hpp>
 using namespace ytcpp;
 
 int main() {
     try {
-        Curl::Response response = Curl::Get("https://2ip.io", { "User-Agent: curl/8.5.0" });
-        fmt::print("[{}] {}", response.code, response.data);
+        Js::Interpreter interpreter;
+        while (true) {
+            std::string input;
+            std::getline(std::cin, input);
+
+            try {
+                std::string output = interpreter.execute(input);
+                fmt::print("{}", output);
+            }
+            catch (const Js::Error& error) {
+                fmt::print(stderr, "Error: {}\n", error.what());
+            }
+        }
     }
     catch (const Error& error) {
         fmt::print(stderr, "Fatal ytcpp::Error!\n");

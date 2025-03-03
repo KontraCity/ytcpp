@@ -7,7 +7,9 @@ include_directories("ytcpp/include")
 
 find_package(fmt CONFIG REQUIRED)
 find_package(CURL REQUIRED)
-set(Dependencies fmt::fmt CURL::libcurl)
+find_package(PkgConfig)
+pkg_check_modules(MUJS REQUIRED IMPORTED_TARGET mujs)
+set(Dependencies fmt::fmt CURL::libcurl PkgConfig::MUJS)
 
 add_subdirectory("ytcpp/")
 add_subdirectory("main/")
