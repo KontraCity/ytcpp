@@ -3,30 +3,23 @@
 #include <fmt/format.h>
 
 #include <ytcpp/core/error.hpp>
-#include <ytcpp/core/js.hpp>
+#include <ytcpp/core/curl.hpp>
 using namespace ytcpp;
+
+static void PrintIP() {
+    Curl::Response response = Curl::Get("https://2ip.io", { "User-Agent: curl/8.5.0" });
+    fmt::print("[{}] {}", response.code, response.data);
+}
 
 int main() {
     try {
-        Js::Interpreter interpreter;
-        while (true) {
-            fmt::print("> ");
-            std::string input;
-            std::getline(std::cin, input);
+        // Direct access
+        Curl::SetProxyUrl("");
+        PrintIP();
 
-            if (input == "reset") {
-                interpreter.reset();
-                continue;
-            }
-
-            try {
-                std::string output = interpreter.execute(input);
-                fmt::print("{}\n", output);
-            }
-            catch (const Js::Error& error) {
-                fmt::print(stderr, "[{}]\n", error.what());
-            }
-        }
+        // Proxied access
+        Curl::SetProxyUrl("socks5://localhost:2081");
+        PrintIP();
     }
     catch (const Error& error) {
         fmt::print(stderr, "Fatal ytcpp::Error!\n");

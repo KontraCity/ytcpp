@@ -1,5 +1,5 @@
 add_library(ytcpp STATIC
-    "source/core/js/interpreter.cpp"
+    "source/core/js_interpreter.cpp"
     "source/core/cache.cpp"
     "source/core/curl.cpp"
     "source/core/io.cpp"

@@ -1,7 +1,10 @@
 #pragma once
 
+#include <memory>
 #include <string>
 #include <stdexcept>
+
+#include <duktape.h>
 
 namespace ytcpp {
 
@@ -22,6 +25,19 @@ namespace Js {
         inline const char* what() const noexcept override {
             return m_message.c_str();
         }
+    };
+
+    class Interpreter {
+    private:
+        std::unique_ptr<duk_context, decltype(&duk_destroy_heap)> m_context;
+
+    public:
+        Interpreter();
+
+    public:
+        std::string execute(const std::string& code);
+
+        void reset();
     };
 }
 

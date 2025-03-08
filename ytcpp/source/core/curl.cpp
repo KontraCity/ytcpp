@@ -13,7 +13,7 @@ static size_t StringWriter(uint8_t* data, size_t itemSize, size_t itemCount, std
     return itemCount * itemSize;
 }
 
-static Curl::Response Request(const std::string& url, const std::vector<std::string>& headers, const std::string& data = {}) {
+Curl::Response Curl::request(const std::string& url, const std::vector<std::string>& headers, const std::string& data) {
     std::unique_ptr<CURL, decltype(&curl_easy_cleanup)> curl(curl_easy_init(), curl_easy_cleanup);
     if (!curl)
         throw YTCPP_LOCATED_ERROR("Couldn't initialize Curl");
@@ -23,6 +23,15 @@ static Curl::Response Request(const std::string& url, const std::vector<std::str
         throw YTCPP_LOCATED_ERROR_WITHDETAILS(
             curl_easy_strerror(result),
             "Couldn't configure request URL (libcurl error: {})",
+            static_cast<int>(result)
+        );
+    }
+
+    result = curl_easy_setopt(curl.get(), CURLOPT_PROXY, m_proxyUrl.c_str());
+    if (result) {
+        throw YTCPP_LOCATED_ERROR_WITHDETAILS(
+            curl_easy_strerror(result),
+            "Couldn't configure request proxy URL (libcurl error: {})",
             static_cast<int>(result)
         );
     }
@@ -116,14 +125,6 @@ static Curl::Response Request(const std::string& url, const std::vector<std::str
     }
 
     return response;
-}
-
-Curl::Response Curl::Get(const std::string& url, const std::vector<std::string>& headers) {
-    return Request(url, headers);
-}
-
-Curl::Response Curl::Post(const std::string& url, const std::string& data, const std::vector<std::string>& headers) {
-    return Request(url, headers, data);
 }
 
 } // namespace ytcpp
