@@ -3,21 +3,14 @@
 #include <memory>
 #include <string>
 
-#include <mujs.h>
+#include <duktape.h>
 
 namespace ytcpp {
 
 namespace Js {
     class Interpreter {
     private:
-        static void Output(js_State* state);
-
-        static void Report(js_State* state, const char* message);
-
-    private:
-        std::unique_ptr<js_State, decltype(&js_freestate)> m_state;
-        std::string m_lastOutput;
-        std::string m_lastReport;
+        std::unique_ptr<duk_context, decltype(&duk_destroy_heap)> m_context;
 
     public:
         Interpreter();

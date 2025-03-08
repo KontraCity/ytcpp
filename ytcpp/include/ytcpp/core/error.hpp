@@ -47,11 +47,11 @@ public:
 // Error that includes throw location
 #define \
     YTCPP_LOCATED_ERROR(message, ...) \
-    Error(__FUNCTION__, "", message, __VA_ARGS__);
+    ytcpp::Error(__FUNCTION__, "", message, __VA_ARGS__);
 
 // Error with details that includes throw location
 #define \
     YTCPP_LOCATED_ERROR_WITHDETAILS(details, message, ...) \
-    Error(__FUNCTION__, details, message, __VA_ARGS__);
+    ytcpp::Error(__FUNCTION__, details, message, __VA_ARGS__);
 
 } // namespace ytcpp
