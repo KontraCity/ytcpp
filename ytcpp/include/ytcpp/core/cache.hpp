@@ -5,20 +5,6 @@
 
 namespace ytcpp {
 
-namespace CacheConst {
-    constexpr const char* CacheFile = ".ytcpp_cache.json";
-    namespace Objects {
-        namespace Auth {
-            constexpr const char* Object = "auth";
-            constexpr const char* Authorized = "authorized";
-            constexpr const char* AccessToken = "access_token";
-            constexpr const char* AccessTokenType = "access_token_type";
-            constexpr const char* ExpiresAt = "expires_at";
-            constexpr const char* RefreshToken = "refresh_token";
-        }
-    }
-}
-
 class Cache {
 public:
     struct Auth {

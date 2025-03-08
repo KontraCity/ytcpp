@@ -4,9 +4,10 @@
 
 #include <ytcpp/core/curl.hpp>
 #include <ytcpp/core/error.hpp>
-#include <ytcpp/core/js_interpreter.hpp>
+#include <ytcpp/core/js.hpp>
 #include <ytcpp/core/logger.hpp>
 #include <ytcpp/innertube.hpp>
+#include <ytcpp/player.hpp>
 using namespace ytcpp;
 
 static void Init() {
@@ -20,11 +21,21 @@ static void Init() {
     Innertube::Authorize();
 }
 
+static void Extract(const std::string& videoId) {
+    Curl::Response response = Innertube::CallApi(Client::Type::Tv, "player", { {"videoId", videoId} });
+    json responseJson = json::parse(response.data);
+    std::string mimeType = responseJson["streamingData"]["formats"][0]["mimeType"];
+    std::string url = Player::PrepareUrl(responseJson["streamingData"]["formats"][0]["signatureCipher"]);
+
+    fmt::print("Suggested format for \"{}\":\n", videoId);
+    fmt::print("Mime type: \"{}\"\n", mimeType);
+    fmt::print("URL: {}\n", url);
+}
+
 int main() {
     try {
         Init();
-        Curl::Response response = Innertube::CallApi(Client::Type::Tv, "player", { {"videoId", "8ZP5eqm4JqM"} });
-        fmt::print("API call result: {}\n", response.code);
+        Extract("8ZP5eqm4JqM");
     }
     catch (const Error& error) {
         fmt::print(stderr, "Fatal ytcpp::Error!\n");

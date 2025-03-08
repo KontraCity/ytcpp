@@ -1,4 +1,4 @@
-#include "ytcpp/core/js_interpreter.hpp"
+#include "ytcpp/core/js.hpp"
 
 #include "ytcpp/core/error.hpp"
 

@@ -6,6 +6,8 @@
 
 #include <duktape.h>
 
+#include <fmt/format.h>
+
 namespace ytcpp {
 
 namespace Js {
@@ -43,6 +45,12 @@ namespace Js {
         std::string execute(const std::string& code);
 
         void reset();
+
+    public:
+        template <typename... Arguments>
+        inline std::string execute(fmt::format_string<Arguments...> code, Arguments&&... arguments) {
+            return execute(fmt::format(code, std::forward<Arguments>(arguments)...));
+        }
     };
 }
 
