@@ -40,7 +40,7 @@ public:
         return *this;
     }
 
-    inline Error& withDump(const std::string& filename, const std::string& contents) {
+    inline Error& withDump(const std::string& contents, const std::string& filename = "dump.json") {
         try {
             IO::WriteFile(filename, contents);
             withDetails(fmt::format("Details dumped to \"{}\"", filename));

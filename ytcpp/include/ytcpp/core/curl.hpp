@@ -8,6 +8,8 @@ namespace ytcpp {
 
 class Curl {
 public:
+    using Headers = std::vector<std::string>;
+
     struct Response {
         long code = 0;
         std::string headers;
@@ -27,7 +29,7 @@ private:
     }
 
 private:
-    Response request(const std::string& url, const std::vector<std::string>& headers, const std::string& data = {});
+    static Response Request(const std::string& url, const std::string& proxyUrl, const Headers& headers, const std::string& data = {});
 
 public:
     static inline void SetProxyUrl(const std::string& url) {
@@ -35,14 +37,22 @@ public:
         Instance().m_proxyUrl = url;
     }
 
-    static inline Response Get(const std::string& url, const std::vector<std::string>& headers = {}) {
-        std::lock_guard lock(Instance().m_mutex);
-        return Instance().request(url, headers);
+    static inline Response Get(const std::string& url, const Headers& headers = {}) {
+        std::string proxyUrl;
+        {
+            std::lock_guard lock(Instance().m_mutex);
+            proxyUrl = Instance().m_proxyUrl;
+        }
+        return Request(url, proxyUrl, headers);
     }
 
-    static inline Response Post(const std::string& url, const std::vector<std::string>& headers, const std::string& data) {
-        std::lock_guard lock(Instance().m_mutex);
-        return Instance().request(url, headers, data);
+    static inline Response Post(const std::string& url, const Headers& headers, const std::string& data) {
+        std::string proxyUrl;
+        {
+            std::lock_guard lock(Instance().m_mutex);
+            proxyUrl = Instance().m_proxyUrl;
+        }
+        return Request(url, proxyUrl, headers, data);
     }
 };
 

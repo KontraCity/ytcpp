@@ -13,7 +13,7 @@ static size_t StringWriter(uint8_t* data, size_t itemSize, size_t itemCount, std
     return itemCount * itemSize;
 }
 
-Curl::Response Curl::request(const std::string& url, const std::vector<std::string>& headers, const std::string& data) {
+Curl::Response Curl::Request(const std::string& url, const std::string& proxyUrl, const Headers& headers, const std::string& data) {
     std::unique_ptr<CURL, decltype(&curl_easy_cleanup)> curl(curl_easy_init(), curl_easy_cleanup);
     if (!curl)
         throw YTCPP_LOCATED_ERROR("Couldn't initialize Curl");
@@ -26,7 +26,7 @@ Curl::Response Curl::request(const std::string& url, const std::vector<std::stri
         ).withDetails(curl_easy_strerror(result));
     }
 
-    result = curl_easy_setopt(curl.get(), CURLOPT_PROXY, m_proxyUrl.c_str());
+    result = curl_easy_setopt(curl.get(), CURLOPT_PROXY, proxyUrl.c_str());
     if (result) {
         throw YTCPP_LOCATED_ERROR(
             "Couldn't configure request proxy URL (libcurl error: {})",

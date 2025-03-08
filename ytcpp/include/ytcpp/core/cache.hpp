@@ -5,7 +5,7 @@
 namespace ytcpp {
 
 namespace CacheConst {
-    constexpr const char* CacheFile = "ytcpp_cache.json";
+    constexpr const char* CacheFile = ".ytcpp_cache.json";
     namespace Objects {
         namespace Auth {
             constexpr const char* Object = "auth";
