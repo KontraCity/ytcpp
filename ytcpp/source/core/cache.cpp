@@ -12,7 +12,10 @@ using nlohmann::json;
 
 namespace ytcpp {
 
-Cache::Cache() {
+std::mutex Cache::Mutex;
+
+Cache::Cache()
+    : m_lock(Mutex) {
     if (!fs::is_regular_file(CacheFile)) {
         save();
         return;

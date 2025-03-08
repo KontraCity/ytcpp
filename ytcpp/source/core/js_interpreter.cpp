@@ -10,6 +10,11 @@ Js::Interpreter::Interpreter()
 }
 
 std::string Js::Interpreter::execute(const std::string& code) {
+    if (!m_context) {
+        // Somebody used std::move() and invalidated the context!
+        reset();
+    }
+
     duk_int_t error = duk_peval_string(m_context.get(), code.c_str());
     std::string result = duk_safe_to_string(m_context.get(), -1);
     if (error)

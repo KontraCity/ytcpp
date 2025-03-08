@@ -36,7 +36,8 @@ static inline int GetUnixTimestamp() {
 }
 
 void Innertube::Authorize() {
-    if (Cache().auth().authorized)
+    Cache cache;
+    if (cache.auth().authorized)
         return;
 
     Client::Fields fields = Client::ClientFields(Client::Type::AuthCode, { {"device_id", GenerateUuid(false)} });
@@ -90,12 +91,12 @@ void Innertube::Authorize() {
                 ).withDump(response.data);
             }
 
-            Cache cache;
-            cache.auth().authorized = true;
-            cache.auth().accessToken = responseJson.at("access_token");
-            cache.auth().accessTokenType = responseJson.at("token_type");
-            cache.auth().expiresAt = GetUnixTimestamp() + responseJson.at("expires_in").get<int>();
-            cache.auth().refreshToken = responseJson.at("refresh_token");
+            Cache::Auth auth = auth;
+            auth.authorized = true;
+            auth.accessToken = responseJson.at("access_token");
+            auth.accessTokenType = responseJson.at("token_type");
+            auth.expiresAt = GetUnixTimestamp() + responseJson.at("expires_in").get<int>();
+            auth.refreshToken = responseJson.at("refresh_token");
 
             Logger::Info("Authorized successfully");
             return;
@@ -113,7 +114,8 @@ void Innertube::Authorize() {
 }
 
 Cache::Auth Innertube::UpdateAuth() {
-    Client::Fields fields = Client::ClientFields(Client::Type::AuthTokenRefresh, { {"refresh_token", Cache().auth().refreshToken} });
+    Cache cache;
+    Client::Fields fields = Client::ClientFields(Client::Type::AuthTokenRefresh, { {"refresh_token", cache.auth().refreshToken} });
     Curl::Response response = Curl::Post(Urls::AuthToken, fields.headers, fields.data.dump());
     if (response.code != 200) {
         throw YTCPP_LOCATED_ERROR(
@@ -131,10 +133,10 @@ Cache::Auth Innertube::UpdateAuth() {
             ).withDump(response.data);
         }
 
-        Cache cache;
-        cache.auth().accessToken = responseJson.at("access_token");
-        cache.auth().accessTokenType = responseJson.at("token_type");
-        cache.auth().expiresAt = GetUnixTimestamp() + responseJson.at("expires_in").get<int>();
+        Cache::Auth auth = auth;
+        auth.accessToken = responseJson.at("access_token");
+        auth.accessTokenType = responseJson.at("token_type");
+        auth.expiresAt = GetUnixTimestamp() + responseJson.at("expires_in").get<int>();
 
         Logger::Info("Access token refreshed successfully");
         return cache.auth();

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <mutex>
 #include <string>
 
 namespace ytcpp {
@@ -31,12 +32,14 @@ public:
     };
 
 private:
+    static std::mutex Mutex;
+    std::lock_guard<std::mutex> m_lock;
     Auth m_auth;
     Auth m_originalAuth;
 
 public:
     Cache();
-    
+
     ~Cache();
 
 private:

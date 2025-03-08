@@ -34,6 +34,11 @@ namespace Js {
     public:
         Interpreter();
 
+        Interpreter(Interpreter&& other) = default;
+
+    public:
+        Interpreter& operator=(Interpreter&& other) = default;
+
     public:
         std::string execute(const std::string& code);
 
