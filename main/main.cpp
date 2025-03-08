@@ -1,25 +1,26 @@
-#include <iostream>
+#include <nlohmann/json.hpp>
+using nlohmann::json;
 
 #include <fmt/format.h>
 
 #include <ytcpp/core/error.hpp>
-#include <ytcpp/core/curl.hpp>
 using namespace ytcpp;
 
-static void PrintIP() {
-    Curl::Response response = Curl::Get("https://2ip.io", { "User-Agent: curl/8.5.0" });
-    fmt::print("[{}] {}", response.code, response.data);
+static void Parse(const std::string& data) {
+    try {
+        json::parse(data);
+    }
+    catch (const json::exception& error) {
+        throw YTCPP_LOCATED_ERROR(
+            "Couldn't parse JSON (error id: {})",
+            error.id
+        ).withDump("dump.json", data);
+    }
 }
 
 int main() {
     try {
-        // Direct access
-        Curl::SetProxyUrl("");
-        PrintIP();
-
-        // Proxied access
-        Curl::SetProxyUrl("socks5://localhost:2081");
-        PrintIP();
+        Parse(R"JSON({ "fruit": 'apple" })JSON");
     }
     catch (const Error& error) {
         fmt::print(stderr, "Fatal ytcpp::Error!\n");

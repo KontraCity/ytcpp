@@ -5,6 +5,8 @@
 
 #include <fmt/format.h>
 
+#include "ytcpp/core/io.hpp"
+
 namespace ytcpp {
 
 class Error : public std::exception {
@@ -16,17 +18,37 @@ private:
 
 public:
     template <typename... Arguments>
-    Error(const std::string& location, const std::string& details, fmt::format_string<Arguments...> message, Arguments&&... arguments)
-        : m_location(location)
-        , m_message(fmt::format(message, std::forward<Arguments>(arguments)...))
-        , m_details(details) {
-        if (m_details.empty())
-            m_what = fmt::format("{}: {}", m_location, m_message);
-        else
-            m_what = fmt::format("{}: {} [{}]", m_location, m_message, m_details);
+    Error(const std::string& location, fmt::format_string<Arguments...> message, Arguments&&... arguments) {
+        try {
+            m_location = location;
+            m_message = fmt::format(message, std::forward<Arguments>(arguments)...);
+            withDetails("");
+        }
+        catch (...) {}
     }
 
 public:
+    inline Error& withDetails(const std::string& details) {
+        try {
+            m_details = details;
+            if (m_details.empty())
+                m_what = fmt::format("{}: {}", m_location, m_message);
+            else
+                m_what = fmt::format("{}: {} [{}]", m_location, m_message, m_details);
+        }
+        catch (...) {}
+        return *this;
+    }
+
+    inline Error& withDump(const std::string& filename, const std::string& contents) {
+        try {
+            IO::WriteFile(filename, contents);
+            withDetails(fmt::format("Details dumped to \"{}\"", filename));
+        }
+        catch (...) {}
+        return *this;
+    }
+
     inline const std::string& location() const {
         return m_location;
     }
@@ -44,14 +66,9 @@ public:
     }
 };
 
-// Error that includes throw location
+// ytcpp::Error with throw location
 #define \
     YTCPP_LOCATED_ERROR(message, ...) \
-    ytcpp::Error(__FUNCTION__, "", message, __VA_ARGS__);
-
-// Error with details that includes throw location
-#define \
-    YTCPP_LOCATED_ERROR_WITHDETAILS(details, message, ...) \
-    ytcpp::Error(__FUNCTION__, details, message, __VA_ARGS__);
+    ytcpp::Error(std::string(__FUNCTION__) + "()", message, ##__VA_ARGS__)
 
 } // namespace ytcpp

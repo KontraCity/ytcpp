@@ -20,57 +20,51 @@ Curl::Response Curl::request(const std::string& url, const std::vector<std::stri
 
     CURLcode result = curl_easy_setopt(curl.get(), CURLOPT_URL, url.c_str());
     if (result) {
-        throw YTCPP_LOCATED_ERROR_WITHDETAILS(
-            curl_easy_strerror(result),
+        throw YTCPP_LOCATED_ERROR(
             "Couldn't configure request URL (libcurl error: {})",
             static_cast<int>(result)
-        );
+        ).withDetails(curl_easy_strerror(result));
     }
 
     result = curl_easy_setopt(curl.get(), CURLOPT_PROXY, m_proxyUrl.c_str());
     if (result) {
-        throw YTCPP_LOCATED_ERROR_WITHDETAILS(
-            curl_easy_strerror(result),
+        throw YTCPP_LOCATED_ERROR(
             "Couldn't configure request proxy URL (libcurl error: {})",
             static_cast<int>(result)
-        );
+        ).withDetails(curl_easy_strerror(result));
     }
 
     Curl::Response response = {};
     result = curl_easy_setopt(curl.get(), CURLOPT_HEADERDATA, &response.headers);
     if (result) {
-        throw YTCPP_LOCATED_ERROR_WITHDETAILS(
-            curl_easy_strerror(result),
+        throw YTCPP_LOCATED_ERROR(
             "Couldn't configure response headers write target (libcurl error: {})",
             static_cast<int>(result)
-        );
+        ).withDetails(curl_easy_strerror(result));
     }
 
     result = curl_easy_setopt(curl.get(), CURLOPT_HEADERFUNCTION, &StringWriter);
     if (result) {
-        throw YTCPP_LOCATED_ERROR_WITHDETAILS(
-            curl_easy_strerror(result),
+        throw YTCPP_LOCATED_ERROR(
             "Couldn't configure response headers write function (libcurl error: {})",
             static_cast<int>(result)
-        );
+        ).withDetails(curl_easy_strerror(result));
     }
 
     result = curl_easy_setopt(curl.get(), CURLOPT_WRITEDATA, &response.data);
     if (result) {
-        throw YTCPP_LOCATED_ERROR_WITHDETAILS(
-            curl_easy_strerror(result),
+        throw YTCPP_LOCATED_ERROR(
             "Couldn't configure response data write target (libcurl error: {})",
             static_cast<int>(result)
-        );
+        ).withDetails(curl_easy_strerror(result));
     }
 
     result = curl_easy_setopt(curl.get(), CURLOPT_WRITEFUNCTION, &StringWriter);
     if (result) {
-        throw YTCPP_LOCATED_ERROR_WITHDETAILS(
-            curl_easy_strerror(result),
+        throw YTCPP_LOCATED_ERROR(
             "Couldn't configure response data write function (libcurl error: {})",
             static_cast<int>(result)
-        );
+        ).withDetails(curl_easy_strerror(result));
     }
 
     std::unique_ptr<curl_slist, decltype(&curl_slist_free_all)> slist(nullptr, curl_slist_free_all);
@@ -87,41 +81,37 @@ Curl::Response Curl::request(const std::string& url, const std::vector<std::stri
 
         result = curl_easy_setopt(curl.get(), CURLOPT_HTTPHEADER, slist.get());
         if (result) {
-            throw YTCPP_LOCATED_ERROR_WITHDETAILS(
-                curl_easy_strerror(result),
+            throw YTCPP_LOCATED_ERROR(
                 "Couldn't configure request headers (libcurl error: {})",
                 static_cast<int>(result)
-            );
+            ).withDetails(curl_easy_strerror(result));
         }
     }
 
     if (!data.empty()) {
         result = curl_easy_setopt(curl.get(), CURLOPT_POSTFIELDS, data.c_str());
         if (result) {
-            throw YTCPP_LOCATED_ERROR_WITHDETAILS(
-                curl_easy_strerror(result),
+            throw YTCPP_LOCATED_ERROR(
                 "Couldn't configure request post data (libcurl error: {})",
                 static_cast<int>(result)
-            );
+            ).withDetails(curl_easy_strerror(result));
         }
     }
 
     result = curl_easy_perform(curl.get());
     if (result) {
-        throw YTCPP_LOCATED_ERROR_WITHDETAILS(
-            curl_easy_strerror(result),
+        throw YTCPP_LOCATED_ERROR(
             "Couldn't perform request (libcurl error: {})",
             static_cast<int>(result)
-        );
+        ).withDetails(curl_easy_strerror(result));
     }
 
     result = curl_easy_getinfo(curl.get(), CURLINFO_RESPONSE_CODE, &response.code);
     if (result) {
-        throw YTCPP_LOCATED_ERROR_WITHDETAILS(
-            curl_easy_strerror(result),
+        throw YTCPP_LOCATED_ERROR(
             "Couldn't retrieve response code (libcurl error: {})",
             static_cast<int>(result)
-        );
+        ).withDetails(curl_easy_strerror(result));
     }
 
     return response;

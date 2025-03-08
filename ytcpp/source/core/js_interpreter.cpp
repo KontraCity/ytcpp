@@ -1,6 +1,5 @@
-#include "ytcpp/core/js/interpreter.hpp"
+#include "ytcpp/core/js_interpreter.hpp"
 
-#include "ytcpp/core/js/error.hpp"
 #include "ytcpp/core/error.hpp"
 
 namespace ytcpp {
