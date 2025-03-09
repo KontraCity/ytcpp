@@ -7,6 +7,7 @@
 
 #include "ytcpp/core/error.hpp"
 #include "ytcpp/core/logger.hpp"
+#include "ytcpp/core/stopwatch.hpp"
 
 namespace ytcpp {
 
@@ -108,6 +109,7 @@ Curl::Response Curl::Request(const std::string& url, const std::string& proxyUrl
         }
     }
 
+    Stopwatch stopwatch;
     constexpr int TotalAttempts = 5;
     for (int attempt = 1; true; ++attempt) {
         result = curl_easy_perform(curl.get());
@@ -130,6 +132,7 @@ Curl::Response Curl::Request(const std::string& url, const std::string& proxyUrl
             curl_easy_strerror(result)
         );
     }
+    stopwatch.stop();
     
     result = curl_easy_getinfo(curl.get(), CURLINFO_RESPONSE_CODE, &response.code);
     if (result) {
@@ -140,7 +143,7 @@ Curl::Response Curl::Request(const std::string& url, const std::string& proxyUrl
         );
     }
 
-    Logger::Debug("[{}] {} {}", response.code, data.empty() ? "GET" : "POST", url);
+    Logger::Debug("[{}] ({} ms) {} {}", response.code, stopwatch.ms(), data.empty() ? "GET" : "POST", url);
     return response;
 }
 

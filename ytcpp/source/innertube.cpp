@@ -18,6 +18,7 @@ using nlohmann::json;
 #include "ytcpp/core/cache.hpp"
 #include "ytcpp/core/error.hpp"
 #include "ytcpp/core/logger.hpp"
+#include "ytcpp/core/stopwatch.hpp"
 #include "ytcpp/core/utility.hpp"
 
 namespace ytcpp {
@@ -46,6 +47,7 @@ static Cache::Auth UpdateAuth() {
     if (GetUnixTimestamp() + 10 < cache.auth().expiresAt)
         return cache.auth();
 
+    Stopwatch stopwatch;
     Client::Fields fields = Client::ClientFields(Client::Type::AuthTokenRefresh, { {"refresh_token", cache.auth().refreshToken} });
     Curl::Response response = Curl::Post(Urls::AuthToken, fields.headers, fields.data.dump());
     if (response.code != 200) {
@@ -68,9 +70,9 @@ static Cache::Auth UpdateAuth() {
         auth.accessToken = responseJson.at("access_token");
         auth.accessTokenType = responseJson.at("token_type");
         auth.expiresAt = GetUnixTimestamp() + responseJson.at("expires_in").get<int>();
+        stopwatch.stop();
 
-        Logger::Info("Access token refreshed");
-        Logger::Debug("Access token \"{}\" expires at {}", auth.accessTokenType, auth.expiresAt);
+        Logger::Debug("Access token \"{}\" refreshed in {} ms, expires at {}", auth.accessTokenType, stopwatch.ms(), auth.expiresAt);
         return cache.auth();
     }
     catch (const json::exception& error) {
@@ -144,8 +146,7 @@ void Innertube::Authorize() {
             auth.expiresAt = GetUnixTimestamp() + responseJson.at("expires_in").get<int>();
             auth.refreshToken = responseJson.at("refresh_token");
 
-            Logger::Info("Authorized");
-            Logger::Debug("Access token \"{}\" expires at {}", auth.accessTokenType, auth.expiresAt);
+            Logger::Debug("Authorized, access token \"{}\" expires at {}", auth.accessTokenType, auth.expiresAt);
             return;
         }
         catch (const json::exception& error)

@@ -5,6 +5,7 @@
 #include "ytcpp/core/curl.hpp"
 #include "ytcpp/core/error.hpp"
 #include "ytcpp/core/logger.hpp"
+#include "ytcpp/core/stopwatch.hpp"
 
 namespace ytcpp {
 
@@ -40,6 +41,7 @@ void Player::updatePlayer() {
         return;
     m_playerId.clear();
 
+    Stopwatch stopwatch;
     Curl::Response response = Curl::Get(fmt::format(Urls::PlayerCode, currentPlayerId));
     if (response.code != 200) {
         throw YTCPP_LOCATED_ERROR(
@@ -72,12 +74,10 @@ void Player::updatePlayer() {
 
     if (boost::regex_search(nFunctionCode, matches, boost::regex(Regex::ExtractNFunctionSecretVariable)))
         m_interpreter.execute("var {} = 0;", matches.str(1));
+    stopwatch.stop();
 
     m_playerId = currentPlayerId;
-    if (oldPlayerId.empty())
-        Logger::Debug("Updated to player \"{}\" (sigfunc: {}, nsigfunc: {})", currentPlayerId, m_sigFunction, m_nsigFunction);
-    else
-        Logger::Debug("Updated from player \"{}\" to \"{}\" (sigfunc: {}, nsigfunc: {})", oldPlayerId, currentPlayerId, m_sigFunction, m_nsigFunction);
+    Logger::Debug("Updated to player \"{}\" in ({} ms, sigfunc: {}, nsigfunc: {})", currentPlayerId, stopwatch.ms(), m_sigFunction, m_nsigFunction);
 }
 
 std::string Player::prepareUrl(const std::string& signatureCipher) {
@@ -87,12 +87,16 @@ std::string Player::prepareUrl(const std::string& signatureCipher) {
         // Signature cipher is probably already prepared
         return signatureCipher;
     }
-
     updatePlayer();
+
+    Stopwatch stopwatch;
     std::string signature = m_interpreter.execute(R"({}("{}"))", m_sigFunction, matches.str(1));
     std::string nsignature = m_interpreter.execute(R"({}("{}"))", m_nsigFunction, matches.str(3));
     std::string url = boost::regex_replace(matches.str(2), boost::regex(R"(&n=(.+?)&)"), fmt::format("&n={}&", nsignature));
     std::string result = fmt::format("{}&sig={}", m_interpreter.execute(R"(decodeURIComponent("{}"))", url), signature);
+    stopwatch.stop();
+
+    Logger::Debug("URL prepared ({} ms)", stopwatch.ms());
     return result;
 }
 
