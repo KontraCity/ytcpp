@@ -69,7 +69,8 @@ static Cache::Auth UpdateAuth() {
         auth.accessTokenType = responseJson.at("token_type");
         auth.expiresAt = GetUnixTimestamp() + responseJson.at("expires_in").get<int>();
 
-        Logger::Info("Access token refreshed successfully");
+        Logger::Info("Access token refreshed");
+        Logger::Debug("Access token \"{}\" expires at {}", auth.accessTokenType, auth.expiresAt);
         return cache.auth();
     }
     catch (const json::exception& error) {
@@ -143,7 +144,8 @@ void Innertube::Authorize() {
             auth.expiresAt = GetUnixTimestamp() + responseJson.at("expires_in").get<int>();
             auth.refreshToken = responseJson.at("refresh_token");
 
-            Logger::Info("Authorized successfully");
+            Logger::Info("Authorized");
+            Logger::Debug("Access token \"{}\" expires at {}", auth.accessTokenType, auth.expiresAt);
             return;
         }
         catch (const json::exception& error)

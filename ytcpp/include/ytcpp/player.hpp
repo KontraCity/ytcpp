@@ -12,8 +12,8 @@ private:
     std::mutex m_mutex;
     std::string m_playerId;
     Js::Interpreter m_interpreter;
-    std::string m_sigFuncName;
-    std::string m_nFuncName;
+    std::string m_sigFunction;
+    std::string m_nsigFunction;
 
 private:
     Player() = default;

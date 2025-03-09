@@ -140,6 +140,7 @@ Curl::Response Curl::Request(const std::string& url, const std::string& proxyUrl
         );
     }
 
+    Logger::Debug("[{}] {} {}", response.code, data.empty() ? "GET" : "POST", url);
     return response;
 }
 

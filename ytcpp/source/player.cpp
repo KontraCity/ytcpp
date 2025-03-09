@@ -33,25 +33,26 @@ static std::string GetPlayerId() {
 }
 
 void Player::updatePlayer() {
+    std::string oldPlayerId = m_playerId;
     std::string currentPlayerId = GetPlayerId();
-    if (m_playerId == currentPlayerId)
+    if (oldPlayerId == currentPlayerId)
         return;
-    m_playerId = currentPlayerId;
+    m_playerId.clear();
 
-    Curl::Response response = Curl::Get(fmt::format(Urls::PlayerCode, m_playerId));
+    Curl::Response response = Curl::Get(fmt::format(Urls::PlayerCode, currentPlayerId));
     if (response.code != 200) {
         throw YTCPP_LOCATED_ERROR(
             "Couldn't get player code response [player: \"{}\", response code: {}]",
-            m_playerId, response.code
+            currentPlayerId, response.code
         ).withDump(response.data);
     }
 
     boost::smatch matches;
     if (!boost::regex_search(response.data, matches, boost::regex(Regex::ExtractSignatureFunction)))
         throw YTCPP_LOCATED_ERROR("Couldn't extract signature function from player code").withDump(response.data);
-    m_sigFuncName = matches.str(1);
     m_interpreter.reset();
     m_interpreter.execute(matches.str(0));
+    m_sigFunction = matches.str(1);
 
     std::string encapsulatedObjectName = boost::regex_replace(matches.str(2), boost::regex(R"(\$)"), R"(\\$)");
     if (!boost::regex_search(response.data, matches, boost::regex(fmt::format(R"(var {}=\{{[\s\S]*?\}};)", encapsulatedObjectName))))
@@ -59,14 +60,19 @@ void Player::updatePlayer() {
     m_interpreter.execute(matches.str(0));
 
     if (!boost::regex_search(response.data, matches, boost::regex(Regex::ExtractNFunction)))
-        throw YTCPP_LOCATED_ERROR("Couldn't extract N function from player code").withDump(response.data);
+        throw YTCPP_LOCATED_ERROR("Couldn't extract N signature function from player code").withDump(response.data);
     std::string nFunctionCode = matches.str(0);
-    m_nFuncName = matches.str(1);
     m_interpreter.execute(nFunctionCode);
+    m_nsigFunction = matches.str(1);
 
     if (boost::regex_search(nFunctionCode, matches, boost::regex(Regex::ExtractNFunctionSecretVariable)))
         m_interpreter.execute("var {} = 0;", matches.str(1));
-    Logger::Info("Updated to player \"{}\" (sigfunc: {}, nfunc: {})", m_playerId, m_sigFuncName, m_nFuncName);
+
+    m_playerId = currentPlayerId;
+    if (oldPlayerId.empty())
+        Logger::Debug("Updated to player \"{}\" (sigfunc: {}, nsigfunc: {})", currentPlayerId, m_sigFunction, m_nsigFunction);
+    else
+        Logger::Debug("Updated from player \"{}\" to \"{}\" (sigfunc: {}, nsigfunc: {})", oldPlayerId, currentPlayerId, m_sigFunction, m_nsigFunction);
 }
 
 std::string Player::prepareUrl(const std::string& signatureCipher) {
@@ -78,10 +84,11 @@ std::string Player::prepareUrl(const std::string& signatureCipher) {
     }
 
     updatePlayer();
-    std::string signature = m_interpreter.execute(R"({}("{}"))", m_sigFuncName, matches.str(1));
-    std::string n = m_interpreter.execute(R"({}("{}"))", m_nFuncName, matches.str(3));
-    std::string url = boost::regex_replace(matches.str(2), boost::regex(R"(&n=(.+?)&)"), fmt::format("&n={}&", n));
-    return fmt::format("{}&sig={}", m_interpreter.execute(R"(decodeURIComponent("{}"))", url), signature);
+    std::string signature = m_interpreter.execute(R"({}("{}"))", m_sigFunction, matches.str(1));
+    std::string nsignature = m_interpreter.execute(R"({}("{}"))", m_nsigFunction, matches.str(3));
+    std::string url = boost::regex_replace(matches.str(2), boost::regex(R"(&n=(.+?)&)"), fmt::format("&n={}&", nsignature));
+    std::string result = fmt::format("{}&sig={}", m_interpreter.execute(R"(decodeURIComponent("{}"))", url), signature);
+    return result;
 }
 
 } // namespace ytcpp
