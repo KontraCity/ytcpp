@@ -14,6 +14,7 @@ private:
     Js::Interpreter m_interpreter;
     std::string m_sigFunction;
     std::string m_nsigFunction;
+    int m_signatureTimestamp = 0;
 
 private:
     Player() = default;
@@ -29,6 +30,12 @@ private:
     std::string prepareUrl(const std::string& signatureCipher);
 
 public:
+    static inline int GetSignatureTimestamp() {
+        std::lock_guard lock(Instance().m_mutex);
+        Instance().updatePlayer();
+        return Instance().m_signatureTimestamp;
+    }
+
     static inline std::string PrepareUrl(const std::string& signatureCipher) {
         std::lock_guard lock(Instance().m_mutex);
         return Instance().prepareUrl(signatureCipher);

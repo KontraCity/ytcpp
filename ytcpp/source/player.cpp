@@ -15,6 +15,7 @@ namespace Urls {
 
 namespace Regex {
     constexpr const char* ExtractPlayerId = R"(https:\\\/\\\/www\.youtube\.com\\\/s\\\/player\\\/(.+?)\\\/)";
+    constexpr const char* ExtractSignatureTimestamp = R"(signatureTimestamp:(\d+))";
     constexpr const char* ExtractSignatureFunction = R"(([a-zA-Z0-9_$]+)\s*=\s*function\(\s*[a-zA-Z0-9_$]+\s*\)\s*\{\s*[a-zA-Z0-9_$]+\s*=\s*[a-zA-Z0-9_$]+\.split\(\s*""\s*\)\s*;([a-zA-Z0-9_$]+)\s*[^\}]+;\s*return\s+[a-zA-Z0-9_$]+\.join\(\s*""\s*\)\s*\})";
     constexpr const char* ExtractSignatureObject = R"(var {}=\{{[\s\S]*?\}};)";
     constexpr const char* ExtractNFunction = R"(([a-zA-Z0-9_$]+)\s*=\s*function\(\s*[a-zA-Z0-9_$]+\s*\)\s*\{var [a-zA-Z0-9_$]+=(?:[a-zA-Z0-9_$]+\.split|String\.prototype\.split\.call)\([\s\S]*?return (?:[a-zA-Z0-9_$]+\.join|Array\.prototype\.join\.call)\(.*?\)\s*\};)";
@@ -48,6 +49,10 @@ void Player::updatePlayer() {
     }
 
     boost::smatch matches;
+    if (!boost::regex_search(response.data, matches, boost::regex(Regex::ExtractSignatureTimestamp)))
+        throw YTCPP_LOCATED_ERROR("Couldn't extract signature timestamp from player code").withDump(response.data);
+    m_signatureTimestamp = std::stoi(matches.str(1));
+
     if (!boost::regex_search(response.data, matches, boost::regex(Regex::ExtractSignatureFunction)))
         throw YTCPP_LOCATED_ERROR("Couldn't extract signature function from player code").withDump(response.data);
     m_interpreter.reset();

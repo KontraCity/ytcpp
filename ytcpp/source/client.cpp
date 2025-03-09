@@ -3,6 +3,7 @@
 #include <type_traits>
 
 #include "ytcpp/core/error.hpp"
+#include "ytcpp/player.hpp"
 
 namespace ytcpp {
 
@@ -53,6 +54,11 @@ Client::Fields Client::ClientFields(Type type, const json& additionalData) {
                         {"clientName", "TVHTML5"},
                         {"clientVersion", "7.20240813.07.00"},
                         {"platform", "TV"}
+                    }}
+                }},
+                {"playbackContext", {
+                    {"contentPlaybackContext", {
+                        {"signatureTimestamp", Player::GetSignatureTimestamp()}
                     }}
                 }},
                 {"contentCheckOk", true}
