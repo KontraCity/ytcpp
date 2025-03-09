@@ -10,9 +10,12 @@ find_package(CURL REQUIRED)
 find_package(PkgConfig)
 find_package(nlohmann_json CONFIG REQUIRED)
 set(Dependencies fmt::fmt CURL::libcurl nlohmann_json::nlohmann_json)
+
 if (UNIX)
+    # Unix duktape install
     set(Dependencies ${Dependencies} duktape)
 else()
+    # Vcpkg duktape install
     find_package(unofficial-duktape CONFIG REQUIRED)
     set(Dependencies ${Dependencies} unofficial::duktape::duktape)
 endif()

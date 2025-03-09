@@ -66,14 +66,14 @@ static Cache::Auth UpdateAuth() {
             ).withDump(response.data);
         }
 
-        Cache::Auth auth = cache.auth();
+        Cache::Auth& auth = cache.auth();
         auth.accessToken = responseJson.at("access_token");
         auth.accessTokenType = responseJson.at("token_type");
         auth.expiresAt = GetUnixTimestamp() + responseJson.at("expires_in").get<int>();
         stopwatch.stop();
 
         Logger::Debug("Access token \"{}\" refreshed ({} ms), expires at {}", auth.accessTokenType, stopwatch.ms(), auth.expiresAt);
-        return cache.auth();
+        return auth;
     }
     catch (const json::exception& error) {
         throw YTCPP_LOCATED_ERROR(
@@ -139,7 +139,7 @@ void Innertube::Authorize() {
                 ).withDump(response.data);
             }
 
-            Cache::Auth auth = cache.auth();
+            Cache::Auth& auth = cache.auth();
             auth.authorized = true;
             auth.accessToken = responseJson.at("access_token");
             auth.accessTokenType = responseJson.at("token_type");
