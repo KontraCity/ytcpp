@@ -43,6 +43,27 @@ Client::Fields Client::ClientFields(Type type, const json& additionalData) {
             }};
             break;
         }
+        case Type::AndroidTestsuite: {
+            fields = { {
+                "Content-Type: application/json",
+                "User-Agent: com.google.android.youtube/",
+                "X-Youtube-Client-Name: 30",
+                "X-Youtube-Client-Version: 1.9"
+            }, {
+                {"context", {
+                    {"client", {
+                        {"clientName", "ANDROID_TESTSUITE"},
+                        {"clientVersion", "1.9"},
+                        {"platform", "MOBILE"},
+                        {"osName", "Android"},
+                        {"osVersion", "14"},
+                        {"androidSdkVersion", "34"}
+                    }}
+                }},
+                {"contentCheckOk", true}
+            }};
+            break;
+        }
         case Type::Tv: {
             fields = {{
                 "Content-Type: application/json",
@@ -53,6 +74,29 @@ Client::Fields Client::ClientFields(Type type, const json& additionalData) {
                     {"client", {
                         {"clientName", "TVHTML5"},
                         {"clientVersion", "7.20240813.07.00"},
+                        {"platform", "TV"}
+                    }}
+                }},
+                {"playbackContext", {
+                    {"contentPlaybackContext", {
+                        {"signatureTimestamp", Player::GetSignatureTimestamp()}
+                    }}
+                }},
+                {"contentCheckOk", true}
+            }};
+            break;
+        }
+        case Type::TvEmbed: {
+            fields = {{
+                "Content-Type: application/json",
+                "User-Agent: Mozilla/5.0",
+                "X-Youtube-Client-Name: 85"
+            }, {
+                {"context", {
+                    {"client", {
+                        {"clientName", "TVHTML5_SIMPLY_EMBEDDED_PLAYER"},
+                        {"clientVersion", "2.0"},
+                        {"clientScreen", "EMBED"},
                         {"platform", "TV"}
                     }}
                 }},

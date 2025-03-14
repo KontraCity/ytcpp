@@ -77,7 +77,8 @@ void Player::updatePlayer() {
     stopwatch.stop();
 
     m_playerId = currentPlayerId;
-    Logger::Debug("Updated to player \"{}\" in ({} ms, sigfunc: {}, nsigfunc: {})", currentPlayerId, stopwatch.ms(), m_sigFunction, m_nsigFunction);
+    Logger::Debug("Updated to player \"{}\" ({} ms, sigfunc: {}, nsigfunc: {})", currentPlayerId, stopwatch.ms(), m_sigFunction, m_nsigFunction);
+    Logger::Info("Updated to player \"{}\"", currentPlayerId);
 }
 
 std::string Player::prepareUrl(const std::string& signatureCipher) {
@@ -87,17 +88,33 @@ std::string Player::prepareUrl(const std::string& signatureCipher) {
         // Signature cipher is probably already prepared
         return signatureCipher;
     }
-    updatePlayer();
+    if (m_playerId.empty())
+        updatePlayer();
 
-    Stopwatch stopwatch;
-    std::string signature = m_interpreter.execute(R"({}("{}"))", m_sigFunction, matches.str(1));
-    std::string nsignature = m_interpreter.execute(R"({}("{}"))", m_nsigFunction, matches.str(3));
-    std::string url = boost::regex_replace(matches.str(2), boost::regex(R"(&n=(.+?)&)"), fmt::format("&n={}&", nsignature));
-    std::string result = fmt::format("{}&sig={}", m_interpreter.execute(R"(decodeURIComponent("{}"))", url), signature);
-    stopwatch.stop();
+    constexpr int TotalAttempts = 5;
+    for (int attempt = 0; attempt < TotalAttempts; ++attempt) {
+        Stopwatch stopwatch;
+        std::string signature = m_interpreter.execute(R"({}("{}"))", m_sigFunction, matches.str(1));
+        std::string nsignature = m_interpreter.execute(R"({}("{}"))", m_nsigFunction, matches.str(3));
+        std::string url = boost::regex_replace(matches.str(2), boost::regex(R"(&n=(.+?)&)"), fmt::format("&n={}&", nsignature));
+        std::string result = fmt::format("{}&sig={}", m_interpreter.execute(R"(decodeURIComponent("{}"))", url), signature);
+        stopwatch.stop();
 
-    Logger::Debug("URL prepared ({} ms)", stopwatch.ms());
-    return result;
+        Curl::Response response = Curl::Head(result);
+        if (response.code < 400) {
+            Logger::Debug("URL prepared ({} ms)", stopwatch.ms());
+            return result;
+        }
+
+        // Update the player and try again.
+        Logger::Warn("URL preparation attempt failed (player: {}, response code: {}), retrying...", m_playerId, response.code);
+        updatePlayer();
+    }
+
+    throw YTCPP_LOCATED_ERROR(
+        "Couldn't prepare URL in {} attempts",
+        TotalAttempts
+    ).withDetails(signatureCipher);
 }
 
 } // namespace ytcpp

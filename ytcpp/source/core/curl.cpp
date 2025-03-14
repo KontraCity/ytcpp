@@ -16,12 +16,31 @@ static size_t StringWriter(uint8_t* data, size_t itemSize, size_t itemCount, std
     return itemCount * itemSize;
 }
 
-Curl::Response Curl::Request(const std::string& url, const std::string& proxyUrl, const Headers& headers, const std::string& data) {
+Curl::Response Curl::Request(const std::string& url, const std::string& proxyUrl, const Headers& headers, bool noBody, const std::string& data) {
     std::unique_ptr<CURL, decltype(&curl_easy_cleanup)> curl(curl_easy_init(), curl_easy_cleanup);
     if (!curl)
         throw YTCPP_LOCATED_ERROR("Couldn't initialize Curl");
 
-    CURLcode result = curl_easy_setopt(curl.get(), CURLOPT_URL, url.c_str());
+    CURLcode result = curl_easy_setopt(curl.get(), CURLOPT_BUFFERSIZE, 102400);
+    if (result) {
+        throw YTCPP_LOCATED_ERROR(
+            "Couldn't configure request buffer size (libcurl error: {}, \"{}\")",
+            static_cast<std::underlying_type<CURLcode>::type>(result),
+            curl_easy_strerror(result)
+        );
+    }
+
+    result = curl_easy_setopt(curl.get(), CURLOPT_MAXREDIRS, 50);
+    if (result) {
+        throw YTCPP_LOCATED_ERROR(
+            "Couldn't configure request max redirections (libcurl error: {}, \"{}\")",
+            static_cast<std::underlying_type<CURLcode>::type>(result),
+            curl_easy_strerror(result)
+        );
+    }
+
+
+    result = curl_easy_setopt(curl.get(), CURLOPT_URL, url.c_str());
     if (result) {
         throw YTCPP_LOCATED_ERROR(
             "Couldn't configure request URL (libcurl error: {}, \"{}\")",
@@ -34,6 +53,15 @@ Curl::Response Curl::Request(const std::string& url, const std::string& proxyUrl
     if (result) {
         throw YTCPP_LOCATED_ERROR(
             "Couldn't configure request proxy URL (libcurl error: {}, \"{}\")",
+            static_cast<std::underlying_type<CURLcode>::type>(result),
+            curl_easy_strerror(result)
+        );
+    }
+
+    result = curl_easy_setopt(curl.get(), CURLOPT_NOBODY, static_cast<long>(noBody));
+    if (result) {
+        throw YTCPP_LOCATED_ERROR(
+            "Couldn't configure request body download policy (libcurl error: {}, \"{}\")",
             static_cast<std::underlying_type<CURLcode>::type>(result),
             curl_easy_strerror(result)
         );
@@ -118,8 +146,7 @@ Curl::Response Curl::Request(const std::string& url, const std::string& proxyUrl
 
         if (attempt < TotalAttempts) {
             Logger::Warn(
-                "{}/{} request attempt failed (libcurl error: {}, \"{}\"), retrying",
-                attempt, TotalAttempts,
+                "Request attempt failed (libcurl error: {}, \"{}\"), retrying...",
                 static_cast<std::underlying_type<CURLcode>::type>(result),
                 curl_easy_strerror(result)
             );

@@ -19,7 +19,10 @@ namespace Client {
         AuthCode,
         AuthToken,
         AuthTokenRefresh,
+
+        AndroidTestsuite,
         Tv,
+        TvEmbed,
     };
 
     struct Fields {

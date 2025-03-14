@@ -1,6 +1,9 @@
 #include "ytcpp/innertube.hpp"
 
 #include <algorithm>
+#include <thread>
+#include <chrono>
+using namespace std::chrono_literals;
 
 #include <boost/date_time.hpp>
 namespace dt = boost::gregorian;
@@ -19,7 +22,6 @@ using nlohmann::json;
 #include "ytcpp/core/error.hpp"
 #include "ytcpp/core/logger.hpp"
 #include "ytcpp/core/stopwatch.hpp"
-#include "ytcpp/core/utility.hpp"
 
 namespace ytcpp {
 
@@ -117,7 +119,7 @@ void Innertube::Authorize() {
     Logger::Info("Authorization required");
     Logger::Info("Go to {} and enter \"{}\" code", verificationUrl, userCode);
     for (int second = 0; second < expiresIn; second += interval) {
-        Utility::Sleep(interval);
+        std::this_thread::sleep_for(interval * 1s);
         fields = Client::ClientFields(Client::Type::AuthToken, { {"code", deviceCode} });
         response = Curl::Post(Urls::AuthToken, fields.headers, fields.data.dump());
         if (response.code != 200) {

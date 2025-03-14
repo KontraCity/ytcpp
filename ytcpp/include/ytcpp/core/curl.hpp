@@ -29,7 +29,7 @@ private:
     }
 
 private:
-    static Response Request(const std::string& url, const std::string& proxyUrl, const Headers& headers, const std::string& data = {});
+    static Response Request(const std::string& url, const std::string& proxyUrl, const Headers& headers, bool noBody = false, const std::string& data = {});
 
 public:
     static inline void SetProxyUrl(const std::string& url) {
@@ -37,22 +37,24 @@ public:
         Instance().m_proxyUrl = url;
     }
 
+    static inline std::string GetProxyUrl() {
+        std::lock_guard lock(Instance().m_mutex);
+        return Instance().m_proxyUrl;
+    }
+
+    static inline Response Head(const std::string& url, const Headers& headers = {}) {
+        std::string proxyUrl = GetProxyUrl();
+        return Request(url, proxyUrl, headers, true);
+    }
+
     static inline Response Get(const std::string& url, const Headers& headers = {}) {
-        std::string proxyUrl;
-        {
-            std::lock_guard lock(Instance().m_mutex);
-            proxyUrl = Instance().m_proxyUrl;
-        }
-        return Request(url, proxyUrl, headers);
+        std::string proxyUrl = GetProxyUrl();
+        return Request(url, proxyUrl, headers, false);
     }
 
     static inline Response Post(const std::string& url, const Headers& headers, const std::string& data) {
-        std::string proxyUrl;
-        {
-            std::lock_guard lock(Instance().m_mutex);
-            proxyUrl = Instance().m_proxyUrl;
-        }
-        return Request(url, proxyUrl, headers, data);
+        std::string proxyUrl = GetProxyUrl();
+        return Request(url, proxyUrl, headers, false, data);
     }
 };
 
