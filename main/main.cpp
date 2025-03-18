@@ -6,8 +6,8 @@
 #include <ytcpp/core/error.hpp>
 #include <ytcpp/core/js.hpp>
 #include <ytcpp/core/logger.hpp>
+#include <ytcpp/format.hpp>
 #include <ytcpp/innertube.hpp>
-#include <ytcpp/player.hpp>
 #include <ytcpp/video.hpp>
 #include <ytcpp/yt_error.hpp>
 using namespace ytcpp;
@@ -42,8 +42,11 @@ static void PrintInfo(const std::string& videoIdOrUrl) {
     fmt::print("  View count: {}\n", video.viewCount());
     fmt::print("  Livestream? {}\n", video.isLivestream() ? "yes" : "no");
     fmt::print("  Upcoming?   {}\n", video.isUpcoming() ? "yes" : "no");
+}
 
-    for (const Format::Instance& format : video.formats()) {
+static void PrintFormats(const std::string& videoIdOrUrl) {
+    Format::List formats(videoIdOrUrl);
+    for (const Format::Instance& format : formats) {
         fmt::print("  Info of {} format {}:\n", format->type() == Format::Type::Video ? "video" : "audio", format->itag());
         fmt::print("    Size:        {}\n", format->size() ? std::to_string(*format->size()) : "none");
         fmt::print("    Bitrate:     {}\n", format->bitrate());
@@ -81,7 +84,7 @@ int main() {
             std::system("cls");
 
             try {
-                PrintInfo(input);
+                PrintFormats(input);
             }
             catch (const YtError& error) {
                 fmt::print("ytcpp::YtError occured!\n");

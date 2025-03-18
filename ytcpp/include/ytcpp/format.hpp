@@ -12,7 +12,6 @@ namespace pt = boost::posix_time;
 using nlohmann::json;
 
 #include "ytcpp/dimensions.hpp"
-#include "ytcpp/player.hpp"
 
 namespace ytcpp {
 
@@ -22,10 +21,7 @@ public:
 
     class List : public std::vector<Instance> {
     public:
-        using vector::vector;
-
-    public:
-        void parse(const json& object);
+        List(const std::string& videoIdOrUrl);
     };
 
     enum class Type {
@@ -41,7 +37,7 @@ private:
     uint64_t m_bitrate = 0;
     std::string m_format;
     std::string m_codec;
-    mutable std::string m_url;
+    std::string m_url;
     std::optional<pt::time_duration> m_duration;
 
 public:
@@ -75,7 +71,6 @@ public:
     }
 
     inline const std::string& url() const {
-        m_url = Player::PrepareUrl(m_url);
         return m_url;
     }
 

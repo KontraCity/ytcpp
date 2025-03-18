@@ -7,21 +7,6 @@
 
 namespace ytcpp {
 
-static void CheckPlayability(const json& object) {
-    std::string status = object.at("status");
-    if (status == "OK" || status == "CONTENT_CHECK_REQUIRED" || status == "LIVE_STREAM_OFFLINE")
-        return;
-
-    std::string reason = object.contains("reason") ? object.at("reason") : "";
-    if (status == "UNPLAYABLE")
-        throw YtError(YtError::Type::Unplayable, reason);
-    if (reason == "This video is private")
-        throw YtError(YtError::Type::Private, reason);
-    if (reason == "This video is unavailable" || reason.find("no longer available") != std::string::npos)
-        throw YtError(YtError::Type::Unavailable, reason);
-    throw YtError(YtError::Type::Unknown, fmt::format("(reason: \"{}\", status: \"{}\")", reason, status));
-}
-
 Video::Video(const std::string& videoIdOrUrl) {
     m_id = Utility::ExtractVideoId(videoIdOrUrl);
     extract();
@@ -38,9 +23,7 @@ void Video::extract() {
 
     try {
         const json responseJson = json::parse(response.data);
-        CheckPlayability(responseJson.at("playabilityStatus"));
-        if (responseJson.contains("streamingData"))
-            m_formats.parse(responseJson.at("streamingData").at("adaptiveFormats"));
+        Utility::CheckPlayability(responseJson.at("playabilityStatus"));
     }
     catch (const json::exception& error) {
         throw YTCPP_LOCATED_ERROR(

@@ -23,7 +23,7 @@ namespace Regex {
     constexpr const char* ExtractNFunctionSecretVariable = R"(if\s*\(\s*typeof\s*([a-zA-Z0-9_$]+)\s*===\s*"undefined"\s*\))";
 }
 
-static std::string GetPlayerId() {
+std::string Player::GetPlayerId() {
     Curl::Response response = Curl::Get(Urls::IframeApi);
     if (response.code != 200)
         throw YTCPP_LOCATED_ERROR("Couldn't get iframe API response [response code: {}]", response.code).withDump(response.data);
@@ -34,19 +34,14 @@ static std::string GetPlayerId() {
     return matches.str(1);
 }
 
-void Player::updatePlayer() {
-    std::string oldPlayerId = m_playerId;
-    std::string currentPlayerId = GetPlayerId();
-    if (oldPlayerId == currentPlayerId)
-        return;
-    m_playerId.clear();
-
+Player::Player(const std::string& id)
+    : m_id(id) {
     Stopwatch stopwatch;
-    Curl::Response response = Curl::Get(fmt::format(Urls::PlayerCode, currentPlayerId));
+    Curl::Response response = Curl::Get(fmt::format(Urls::PlayerCode, m_id));
     if (response.code != 200) {
         throw YTCPP_LOCATED_ERROR(
             "Couldn't get player code response [player: \"{}\", response code: {}]",
-            currentPlayerId, response.code
+            m_id, response.code
         ).withDump(response.data);
     }
 
@@ -57,7 +52,6 @@ void Player::updatePlayer() {
 
     if (!boost::regex_search(response.data, matches, boost::regex(Regex::ExtractSignatureFunction)))
         throw YTCPP_LOCATED_ERROR("Couldn't extract signature function from player code").withDump(response.data);
-    m_interpreter.reset();
     m_interpreter.execute(matches.str(0));
     m_sigFunction = matches.str(1);
 
@@ -76,45 +70,26 @@ void Player::updatePlayer() {
         m_interpreter.execute("var {} = 0;", matches.str(1));
     stopwatch.stop();
 
-    m_playerId = currentPlayerId;
-    Logger::Debug("Updated to player \"{}\" ({} ms, sigfunc: {}, nsigfunc: {})", currentPlayerId, stopwatch.ms(), m_sigFunction, m_nsigFunction);
-    Logger::Info("Updated to player \"{}\"", currentPlayerId);
+    Logger::Debug("Player \"{}\": Initialized ({} ms, sigfunc: {}, nsigfunc: {})", m_id, stopwatch.ms(), m_sigFunction, m_nsigFunction);
 }
 
-std::string Player::prepareUrl(const std::string& signatureCipher) {
+std::string Player::prepareUrl(const std::string& signatureCipher) const {
     std::string decodedSignatureCipher = m_interpreter.execute(R"(decodeURIComponent("{}"))", signatureCipher);
     boost::smatch matches;
     if (!boost::regex_match(decodedSignatureCipher, matches, boost::regex(R"(s=([\s\S]+)&sp=sig&url=(.+&n=(.+?)&.+))"))) {
         // Signature cipher is probably already prepared
         return signatureCipher;
     }
-    if (m_playerId.empty())
-        updatePlayer();
 
-    constexpr int TotalAttempts = 5;
-    for (int attempt = 0; attempt < TotalAttempts; ++attempt) {
-        Stopwatch stopwatch;
-        std::string signature = m_interpreter.execute(R"({}("{}"))", m_sigFunction, matches.str(1));
-        std::string nsignature = m_interpreter.execute(R"({}("{}"))", m_nsigFunction, matches.str(3));
-        std::string url = boost::regex_replace(matches.str(2), boost::regex(R"(&n=(.+?)&)"), fmt::format("&n={}&", nsignature));
-        std::string result = fmt::format("{}&sig={}", m_interpreter.execute(R"(decodeURIComponent("{}"))", url), signature);
-        stopwatch.stop();
+    Stopwatch stopwatch;
+    std::string signature = m_interpreter.execute(R"({}("{}"))", m_sigFunction, matches.str(1));
+    std::string nsignature = m_interpreter.execute(R"({}("{}"))", m_nsigFunction, matches.str(3));
+    std::string url = boost::regex_replace(matches.str(2), boost::regex(R"(&n=(.+?)&)"), fmt::format("&n={}&", nsignature));
+    std::string result = fmt::format("{}&sig={}", m_interpreter.execute(R"(decodeURIComponent("{}"))", url), signature);
+    stopwatch.stop();
 
-        Curl::Response response = Curl::Head(result);
-        if (response.code < 400) {
-            Logger::Debug("URL prepared ({} ms)", stopwatch.ms());
-            return result;
-        }
-
-        // Update the player and try again.
-        Logger::Warn("URL preparation attempt failed (player: {}, response code: {}), retrying...", m_playerId, response.code);
-        updatePlayer();
-    }
-
-    throw YTCPP_LOCATED_ERROR(
-        "Couldn't prepare URL in {} attempts",
-        TotalAttempts
-    ).withDetails(signatureCipher);
+    Logger::Debug("Player \"{}\": URL prepared ({} ms)", m_id, stopwatch.ms());
+    return result;
 }
 
 } // namespace ytcpp

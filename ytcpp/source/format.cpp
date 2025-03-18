@@ -1,7 +1,13 @@
 #include "ytcpp/format.hpp"
 
+#include <mutex>
+#include <map>
+
+#include "ytcpp/core/curl.hpp"
 #include "ytcpp/core/error.hpp"
 #include "ytcpp/core/logger.hpp"
+#include "ytcpp/innertube.hpp"
+#include "ytcpp/player.hpp"
 #include "ytcpp/utility.hpp"
 
 namespace ytcpp {
@@ -43,18 +49,61 @@ static std::string ExtractCodec(const std::string& mimeType) {
     return mimeType.substr(begin + 1, end - begin - 1);
 }
 
-void Format::List::parse(const json& object) {
-    reserve(size() + object.size());
-    for (const json& format : object) {
-        std::string mimeType = format.at("mimeType");
-        switch (ExtractType(mimeType)) {
-            case Format::Type::Video:
-                push_back(std::make_unique<VideoFormat>(format));
-                break;
-            case Format::Type::Audio:
-                push_back(std::make_unique<AudioFormat>(format));
-                break;
+static const Player& GetPlayer() {
+    static std::mutex mutex;
+    std::lock_guard lock(mutex);
+
+    static std::map<std::string, Player> cache;
+    std::string playerId = Player::GetPlayerId();
+    auto playerEntry = cache.find(playerId);
+    if (playerEntry == cache.end())
+        playerEntry = cache.emplace(playerId, playerId).first;
+    return playerEntry->second;
+}
+
+Format::List::List(const std::string& videoIdOrUrl) {
+    const Player& player = GetPlayer();
+    Curl::Response response = Innertube::CallApi(
+        Client::Type::Tv, "player", {
+        {"playbackContext", {
+            {"contentPlaybackContext", {
+                {"signatureTimestamp", player.signatureTimestamp()}
+            }}
+        }},
+        {"videoId", Utility::ExtractVideoId(videoIdOrUrl)}
+    });
+    if (response.code != 200) {
+        throw YTCPP_LOCATED_ERROR(
+            "Couldn't get \"player\" response [client: Tv, response code: {}]",
+            response.code
+        ).withDump(response.data);
+    }
+
+    try {
+        const json responseJson = json::parse(response.data);
+        Utility::CheckPlayability(responseJson.at("playabilityStatus"));
+        if (!responseJson.contains("streamingData"))
+            return;
+
+        const json& formats = responseJson.at("streamingData").at("adaptiveFormats");
+        reserve(formats.size());
+        for (const json& format : formats) {
+            Type type = ExtractType(format.at("mimeType"));
+            if (type == Format::Type::Video) {
+                std::string& url = emplace_back(std::make_unique<VideoFormat>(format))->m_url;
+                url = player.prepareUrl(url);
+            }
+            else if (type == Format::Type::Audio) {
+                std::string& url = emplace_back(std::make_unique<AudioFormat>(format))->m_url;
+                url = player.prepareUrl(url);
+            }
         }
+    }
+    catch (const json::exception& error) {
+        throw YTCPP_LOCATED_ERROR(
+            "Couldn't parse \"player\" response JSON [client: Tv, error id: {}]",
+            error.id
+        ).withDump(response.data);
     }
 }
 

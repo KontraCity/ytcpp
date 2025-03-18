@@ -3,7 +3,6 @@
 #include <type_traits>
 
 #include "ytcpp/core/error.hpp"
-#include "ytcpp/player.hpp"
 
 namespace ytcpp {
 
@@ -77,11 +76,6 @@ Client::Fields Client::ClientFields(Type type, const json& additionalData) {
                         {"platform", "TV"}
                     }}
                 }},
-                {"playbackContext", {
-                    {"contentPlaybackContext", {
-                        {"signatureTimestamp", Player::GetSignatureTimestamp()}
-                    }}
-                }},
                 {"contentCheckOk", true}
             }};
             break;
@@ -98,11 +92,6 @@ Client::Fields Client::ClientFields(Type type, const json& additionalData) {
                         {"clientVersion", "2.0"},
                         {"clientScreen", "EMBED"},
                         {"platform", "TV"}
-                    }}
-                }},
-                {"playbackContext", {
-                    {"contentPlaybackContext", {
-                        {"signatureTimestamp", Player::GetSignatureTimestamp()}
                     }}
                 }},
                 {"contentCheckOk", true}

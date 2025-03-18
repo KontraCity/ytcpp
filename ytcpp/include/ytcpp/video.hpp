@@ -7,7 +7,6 @@
 namespace dt = boost::gregorian;
 namespace pt = boost::posix_time;
 
-#include "ytcpp/format.hpp"
 #include "ytcpp/thumbnail.hpp"
 
 namespace ytcpp {
@@ -20,7 +19,6 @@ private:
     Thumbnail::List m_thumbnails;
     pt::time_duration m_duration;
     uint64_t m_viewCount = 0;
-    Format::List m_formats;
     bool m_isLivestream = false;
     bool m_isUpcoming = false;
 
@@ -53,10 +51,6 @@ public:
 
     inline uint64_t viewCount() const {
         return m_viewCount;
-    }
-
-    inline const Format::List& formats() const {
-        return m_formats;
     }
 
     inline bool isLivestream() const {

@@ -30,6 +30,21 @@ namespace Utility {
             return matches.str(1);
         throw YtError(YtError::Type::InvalidId, fmt::format("Invalid video ID or URL: \"{}\"", videoIdOrUrl));
     }
+
+    inline void CheckPlayability(const json& object) {
+        std::string status = object.at("status");
+        if (status == "OK" || status == "CONTENT_CHECK_REQUIRED" || status == "LIVE_STREAM_OFFLINE")
+            return;
+
+        std::string reason = object.contains("reason") ? object.at("reason") : "";
+        if (status == "UNPLAYABLE")
+            throw YtError(YtError::Type::Unplayable, reason);
+        if (reason == "This video is private")
+            throw YtError(YtError::Type::Private, reason);
+        if (reason == "This video is unavailable" || reason.find("no longer available") != std::string::npos)
+            throw YtError(YtError::Type::Unavailable, reason);
+        throw YtError(YtError::Type::Unknown, fmt::format("(reason: \"{}\", status: \"{}\")", reason, status));
+    }
 }
 
 } // namespace ytcpp
