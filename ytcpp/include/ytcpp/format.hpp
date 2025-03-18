@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 
 #include <boost/date_time.hpp>
 namespace dt = boost::gregorian;
@@ -36,12 +37,12 @@ public:
 private:
     Type m_type = Type::Unknown;
     int m_itag = 0;
-    uint64_t m_size = 0;
+    std::optional<uint64_t> m_size;
     uint64_t m_bitrate = 0;
     std::string m_format;
     std::string m_codec;
     mutable std::string m_url;
-    pt::time_duration m_duration;
+    std::optional<pt::time_duration> m_duration;
 
 public:
     Format(const json& object);
@@ -57,7 +58,7 @@ public:
         return m_itag;
     }
 
-    inline uint64_t size() const {
+    inline const std::optional<uint64_t>& size() const {
         return m_size;
     }
 
@@ -78,7 +79,7 @@ public:
         return m_url;
     }
 
-    inline pt::time_duration duration() const {
+    inline const std::optional<pt::time_duration>& duration() const {
         return m_duration;
     }
 };
@@ -105,7 +106,7 @@ class AudioFormat : public Format {
 private:
     int m_channels = 0;
     int m_sampleRate = 0;
-    double m_loudness = 0.0;
+    std::optional<double> m_loudness;
 
 public:
     AudioFormat(const json& object);
@@ -119,7 +120,7 @@ public:
         return m_sampleRate;
     }
 
-    inline double loudness() const {
+    inline const std::optional<double>& loudness() const {
         return m_loudness;
     }
 };

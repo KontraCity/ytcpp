@@ -18,7 +18,7 @@ private:
 
 public:
     template <typename... Arguments>
-    Error(const std::string& location, fmt::format_string<Arguments...> message, Arguments&&... arguments) {
+    Error(const std::string& location, fmt::format_string<Arguments...> message, Arguments&&... arguments) noexcept {
         try {
             m_location = location;
             m_message = fmt::format(message, std::forward<Arguments>(arguments)...);
@@ -28,7 +28,7 @@ public:
     }
 
 public:
-    inline Error& withDetails(const std::string& details) {
+    inline Error& withDetails(const std::string& details) noexcept {
         try {
             m_details = details;
             if (m_details.empty())
@@ -40,7 +40,7 @@ public:
         return *this;
     }
 
-    inline Error& withDump(const std::string& contents, const std::string& filename = "dump.txt") {
+    inline Error& withDump(const std::string& contents, const std::string& filename = "dump.txt") noexcept {
         try {
             IO::WriteFile(filename, contents);
             withDetails(fmt::format("Details dumped to \"{}\"", filename));
@@ -49,15 +49,15 @@ public:
         return *this;
     }
 
-    inline const std::string& location() const {
+    inline const std::string& location() const noexcept {
         return m_location;
     }
 
-    inline const std::string& message() const {
+    inline const std::string& message() const noexcept {
         return m_message;
     }
 
-    inline const std::string& details() const {
+    inline const std::string& details() const noexcept {
         return m_details;
     }
 

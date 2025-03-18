@@ -9,6 +9,7 @@
 #include <ytcpp/innertube.hpp>
 #include <ytcpp/player.hpp>
 #include <ytcpp/video.hpp>
+#include <ytcpp/yt_error.hpp>
 using namespace ytcpp;
 
 static void Init() {
@@ -16,7 +17,7 @@ static void Init() {
     sink->set_pattern("[%^%d.%m.%C %H:%M:%S %L%$] [%n] %v");
     sink->set_color_mode(spdlog::color_mode::always);
     Logger::Sinks().push_back(std::move(sink));
-    Logger::SetLevel(spdlog::level::info);
+    Logger::SetLevel(spdlog::level::debug);
 
     Curl::SetProxyUrl("socks5://localhost:2081");
     Innertube::Authorize();
@@ -39,14 +40,16 @@ static void PrintInfo(const std::string& videoIdOrUrl) {
     fmt::print("  Thumbnails: {}\n", ListThumbnails(video.thumbnails()));
     fmt::print("  Duration:   {}\n", pt::to_simple_string(video.duration()));
     fmt::print("  View count: {}\n", video.viewCount());
+    fmt::print("  Livestream? {}\n", video.isLivestream() ? "yes" : "no");
+    fmt::print("  Upcoming?   {}\n", video.isUpcoming() ? "yes" : "no");
 
     for (const Format::Instance& format : video.formats()) {
         fmt::print("  Info of {} format {}:\n", format->type() == Format::Type::Video ? "video" : "audio", format->itag());
-        fmt::print("    Size:        {}\n", format->size());
+        fmt::print("    Size:        {}\n", format->size() ? std::to_string(*format->size()) : "none");
         fmt::print("    Bitrate:     {}\n", format->bitrate());
         fmt::print("    Format:      {}\n", format->format());
         fmt::print("    Codec:       {}\n", format->codec());
-        fmt::print("    Duration:    {}\n", pt::to_simple_string(format->duration()));
+        fmt::print("    Duration:    {}\n", format->duration() ? pt::to_simple_string(*format->duration()) : "none");
         switch (format->type()) {
             case Format::Type::Video: {
                 const VideoFormat* videoFormat = dynamic_cast<const VideoFormat*>(format.get());
@@ -59,7 +62,7 @@ static void PrintInfo(const std::string& videoIdOrUrl) {
                 const AudioFormat* audioFormat = dynamic_cast<const AudioFormat*>(format.get());
                 fmt::print("    Channels:    {}\n", audioFormat->channels());
                 fmt::print("    Sample rate: {}\n", audioFormat->sampleRate());
-                fmt::print("    Loudness:    {}\n", audioFormat->loudness());
+                fmt::print("    Loudness:    {}\n", audioFormat->loudness() ? std::to_string(*audioFormat->loudness()) : "none");
                 fmt::print("    URL:         {}\n", audioFormat->url());
                 break; 
             }
@@ -70,7 +73,21 @@ static void PrintInfo(const std::string& videoIdOrUrl) {
 int main() {
     try {
         Init();
-        PrintInfo({ "E-PFWBfRwAc" });
+
+        while (true) {
+            std::string input;
+            std::cout << "> ";
+            std::getline(std::cin, input);
+            std::system("cls");
+
+            try {
+                PrintInfo(input);
+            }
+            catch (const YtError& error) {
+                fmt::print("ytcpp::YtError occured!\n");
+                fmt::print("{}\n", error.what());
+            }
+        }
     }
     catch (const Error& error) {
         fmt::print(stderr, "Fatal ytcpp::Error!\n");

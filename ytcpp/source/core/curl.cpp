@@ -16,6 +16,14 @@ static size_t StringWriter(uint8_t* data, size_t itemSize, size_t itemCount, std
     return itemCount * itemSize;
 }
 
+static const char* RequestName(bool noBody, bool noData) {
+    if (noBody)
+        return "HEAD";
+    if (noData)
+        return "GET";
+    return "POST";
+}
+
 Curl::Response Curl::Request(const std::string& url, const std::string& proxyUrl, const Headers& headers, bool noBody, const std::string& data) {
     std::unique_ptr<CURL, decltype(&curl_easy_cleanup)> curl(curl_easy_init(), curl_easy_cleanup);
     if (!curl)
@@ -170,7 +178,7 @@ Curl::Response Curl::Request(const std::string& url, const std::string& proxyUrl
         );
     }
 
-    Logger::Debug("[{}] ({} ms) {} {}", response.code, stopwatch.ms(), data.empty() ? "GET" : "POST", url);
+    Logger::Debug("[{}] ({} ms) {} {}", response.code, stopwatch.ms(), RequestName(noBody, data.empty()), url);
     return response;
 }
 

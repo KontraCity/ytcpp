@@ -21,6 +21,8 @@ private:
     pt::time_duration m_duration;
     uint64_t m_viewCount = 0;
     Format::List m_formats;
+    bool m_isLivestream = false;
+    bool m_isUpcoming = false;
 
 public:
     Video(const std::string& videoIdOrUrl);
@@ -55,6 +57,14 @@ public:
 
     inline const Format::List& formats() const {
         return m_formats;
+    }
+
+    inline bool isLivestream() const {
+        return m_isLivestream;
+    }
+
+    inline bool isUpcoming() const {
+        return m_isUpcoming;
     }
 };
 

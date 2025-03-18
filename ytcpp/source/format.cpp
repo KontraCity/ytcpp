@@ -54,23 +54,22 @@ void Format::List::parse(const json& object) {
             case Format::Type::Audio:
                 push_back(std::make_unique<AudioFormat>(format));
                 break;
-            default:
-                Logger::Warn("Couldn't extract format from mime type string \"{}\"", mimeType);
-                break;
         }
     }
 }
 
 Format::Format(const json& object)
     : m_type(ExtractType(object.at("mimeType")))
-    , m_itag(object.at("itag")) 
-    , m_size(Utility::ExtractNumber(object.at("contentLength"))) 
+    , m_itag(object.at("itag"))
     , m_bitrate(object.at("bitrate"))
     , m_format(ExtractFormat(object.at("mimeType")))
     , m_codec(ExtractCodec(object.at("mimeType")))
-    , m_url(object.contains("url") ? object.at("url") : object.at("signatureCipher"))
-    , m_duration({ 0, 0, 0, Utility::ExtractNumber(object.at("approxDurationMs")) * 100 })
-{}
+    , m_url(object.contains("url") ? object.at("url") : object.at("signatureCipher")) {
+    if (object.contains("contentLength"))
+        m_size.emplace(Utility::ExtractNumber(object.at("contentLength")));
+    if (object.contains("approxDurationMs"))
+        m_duration.emplace(0, 0, 0, Utility::ExtractNumber(object.at("approxDurationMs")) * 100);
+}
 
 VideoFormat::VideoFormat(const json& object)
     : Format(object)
@@ -81,8 +80,9 @@ VideoFormat::VideoFormat(const json& object)
 AudioFormat::AudioFormat(const json& object)
     : Format(object)
     , m_channels(object.at("audioChannels"))
-    , m_sampleRate(Utility::ExtractNumber(object.at("audioSampleRate")))
-    , m_loudness(object.at("loudnessDb"))
-{}
+    , m_sampleRate(Utility::ExtractNumber(object.at("audioSampleRate"))) {
+    if (object.contains("loudnessDb"))
+        m_loudness.emplace(object.at("loudnessDb"));
+}
 
 } // namespace ytcpp
