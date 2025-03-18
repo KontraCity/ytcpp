@@ -8,6 +8,7 @@
 #include <ytcpp/core/logger.hpp>
 #include <ytcpp/format.hpp>
 #include <ytcpp/innertube.hpp>
+#include <ytcpp/search.hpp>
 #include <ytcpp/video.hpp>
 #include <ytcpp/yt_error.hpp>
 using namespace ytcpp;
@@ -32,8 +33,7 @@ static std::string ListThumbnails(const Thumbnail::List& thumbnails) {
     return result;
 }
 
-static void PrintInfo(const std::string& videoIdOrUrl) {
-    const Video video(videoIdOrUrl);
+static void PrintInfo(const Video& video) {
     fmt::print("Info of video {}:\n", video.id());
     fmt::print("  Title:      \"{}\"\n", video.title());
     fmt::print("  Channel:    \"{}\"\n", video.channel());
@@ -76,20 +76,11 @@ static void PrintFormats(const std::string& videoIdOrUrl) {
 int main() {
     try {
         Init();
+        for (const Video& video : QuerySearch("Hello, World!")) {
+            Format::List formats(video.id());
 
-        while (true) {
-            std::string input;
-            std::cout << "> ";
-            std::getline(std::cin, input);
-            std::system("cls");
-
-            try {
-                PrintFormats(input);
-            }
-            catch (const YtError& error) {
-                fmt::print("ytcpp::YtError occured!\n");
-                fmt::print("{}\n", error.what());
-            }
+            PrintInfo(video);
+            fmt::print("----------------------------------------------------------------------\n");
         }
     }
     catch (const Error& error) {

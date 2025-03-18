@@ -11,6 +11,7 @@ class YtError : public std::exception {
 public:
     enum class Type {
         InvalidId,
+        InvalidQuery,
         Unknown,
         Private,
         Unplayable,

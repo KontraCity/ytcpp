@@ -25,6 +25,8 @@ private:
 public:
     Video(const std::string& videoIdOrUrl);
 
+    Video(const json& object);
+
 private:
     void extract();
 

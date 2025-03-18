@@ -12,6 +12,18 @@ Video::Video(const std::string& videoIdOrUrl) {
     extract();
 }
 
+Video::Video(const json& object) {
+    m_id = object.at("videoId");
+    m_title = Utility::ExtractString(object.at("title"));
+    m_channel = Utility::ExtractString(object.at("shortBylineText"));
+    m_thumbnails.parse(object.at("thumbnail").at("thumbnails"));
+    m_duration = Utility::ExtractDuration(object);
+    if (object.contains("viewCountText"))
+        m_viewCount = Utility::ExtractViewCount(object.at("viewCountText"));
+    m_isLivestream = !object.contains("lengthText");
+    m_isUpcoming = object.contains("upcomingEventData");
+}
+
 void Video::extract() {
     Curl::Response response = Innertube::CallApi(Client::Type::Tv, "player", { {"videoId", m_id} });
     if (response.code != 200) {

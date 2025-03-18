@@ -3,7 +3,6 @@
 #include <mutex>
 #include <map>
 
-#include "ytcpp/core/curl.hpp"
 #include "ytcpp/core/error.hpp"
 #include "ytcpp/core/logger.hpp"
 #include "ytcpp/innertube.hpp"
