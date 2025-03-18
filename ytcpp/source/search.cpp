@@ -10,22 +10,22 @@ using nlohmann::json;
 
 namespace ytcpp {
 
-static Results ParseSearchContents(const json& items, Results::Type type, const std::string& query) {
-    Results results(type, query);
-    results.reserve(items.size());
+static SearchResults ParseSearchContents(const json& items, SearchResults::Type type, const std::string& query) {
+    SearchResults SearchResults(type, query);
+    SearchResults.reserve(items.size());
 
     for (const json& item : items) {
         // Videos and shows don't have shortBylineText field.
         // They can't be extracted anyway, so are ignored.
-        if (item.contains("compactVideoRenderer") && item.contains("shortBylineText"))
-            results.emplace_back(item.at("compactVideoRenderer"));
+        if (item.contains("compactVideoRenderer") && item.at("compactVideoRenderer").contains("shortBylineText"))
+            SearchResults.emplace_back(item.at("compactVideoRenderer"));
     }
 
-    results.shrink_to_fit();
-    return results;
+    SearchResults.shrink_to_fit();
+    return SearchResults;
 }
 
-Results QuerySearch(const std::string& query) {
+SearchResults QuerySearch(const std::string& query) {
     Utility::CheckQuery(query);
     Curl::Response response = Innertube::CallApi(Client::Type::TvEmbed, "search", { {"query", query} });
     if (response.code != 200) {
@@ -38,7 +38,7 @@ Results QuerySearch(const std::string& query) {
     try {
         json contentsObject = json::parse(response.data).at("contents")
             .at("sectionListRenderer").at("contents").at(0).at("itemSectionRenderer").at("contents");
-        return ParseSearchContents(contentsObject, Results::Type::QuerySearch, query);
+        return ParseSearchContents(contentsObject, SearchResults::Type::QuerySearch, query);
     }
     catch (const json::exception& error) {
         throw YTCPP_LOCATED_ERROR(
@@ -48,7 +48,7 @@ Results QuerySearch(const std::string& query) {
     }
 }
 
-Results RelatedSearch(const std::string& videoIdOrUrl) {
+SearchResults RelatedSearch(const std::string& videoIdOrUrl) {
     std::string videoId = Utility::ExtractVideoId(videoIdOrUrl);
     Curl::Response response = Innertube::CallApi(Client::Type::TvEmbed, "next", { {"videoId", videoId} });
     if (response.code != 200) {
@@ -59,9 +59,9 @@ Results RelatedSearch(const std::string& videoIdOrUrl) {
     }
 
     try {
-        json contentsObject = json::parse(response.data).at("contents").at("singleColumnWatchNextResults").at("results")
-            .at("results").at("contents").at(2).at("shelfRenderer").at("content").at("horizontalListRenderer").at("items");
-        return ParseSearchContents(contentsObject, Results::Type::RelatedSearch, videoId);
+        json contentsObject = json::parse(response.data).at("contents").at("singleColumnWatchNextSearchResults").at("SearchResults")
+            .at("SearchResults").at("contents").at(2).at("shelfRenderer").at("content").at("horizontalListRenderer").at("items");
+        return ParseSearchContents(contentsObject, SearchResults::Type::RelatedSearch, videoId);
     }
     catch (const json::exception& error) {
         throw YTCPP_LOCATED_ERROR(

@@ -7,7 +7,7 @@
 
 namespace ytcpp {
 
-class Results : public std::vector<Video> {
+class SearchResults : public std::vector<Video> {
 public:
     enum class Type {
         QuerySearch,
@@ -19,7 +19,7 @@ private:
     std::string m_query;
 
 public:
-    Results(Type type, const std::string& query)
+    SearchResults(Type type, const std::string& query)
         : m_type(type)
         , m_query(query)
     {}
@@ -34,8 +34,8 @@ public:
     }
 };
 
-Results QuerySearch(const std::string& query);
+SearchResults QuerySearch(const std::string& query);
 
-Results RelatedSearch(const std::string& videoIdOrUrl);
+SearchResults RelatedSearch(const std::string& videoIdOrUrl);
 
 } // namespace ytcpp

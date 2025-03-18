@@ -76,11 +76,12 @@ static void PrintFormats(const std::string& videoIdOrUrl) {
 int main() {
     try {
         Init();
-        for (const Video& video : QuerySearch("Hello, World!")) {
-            Format::List formats(video.id());
 
-            PrintInfo(video);
-            fmt::print("----------------------------------------------------------------------\n");
+        SearchResults results = QuerySearch("Hello, World!");
+        for (size_t index = 0, size = results.size(); index < size; ++index) {
+            Format::List formats(results.at(index).id());
+            if (!formats.empty())
+                fmt::print("{}. {}\n", index + 1, formats.at(0)->url());
         }
     }
     catch (const Error& error) {
