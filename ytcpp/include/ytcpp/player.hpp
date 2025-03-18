@@ -23,7 +23,7 @@ public:
     Player(const std::string& id);
 
 public:
-    std::string prepareUrl(const std::string& signatureCipher) const;
+    std::string prepareUrl(std::string url) const;
 
 public:
     inline const std::string& id() const {

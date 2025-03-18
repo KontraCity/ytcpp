@@ -73,23 +73,18 @@ Player::Player(const std::string& id)
     Logger::Debug("Player \"{}\": Initialized ({} ms, sigfunc: {}, nsigfunc: {})", m_id, stopwatch.ms(), m_sigFunction, m_nsigFunction);
 }
 
-std::string Player::prepareUrl(const std::string& signatureCipher) const {
-    std::string decodedSignatureCipher = m_interpreter.execute(R"(decodeURIComponent("{}"))", signatureCipher);
+std::string Player::prepareUrl(std::string url) const {
+    url = m_interpreter.execute(R"(decodeURIComponent("{}"))", url);
     boost::smatch matches;
-    if (!boost::regex_match(decodedSignatureCipher, matches, boost::regex(R"(s=([\s\S]+)&sp=sig&url=(.+&n=(.+?)&.+))"))) {
-        // Signature cipher is probably already prepared
-        return signatureCipher;
+    if (boost::regex_search(url, matches, boost::regex(R"(s=(.+)&sp=sig&url=(.+))"))) {
+        std::string signature = m_interpreter.execute(R"({}("{}"))", m_sigFunction, matches.str(1));
+        url = fmt::format("{}&sig={}", m_interpreter.execute(R"(decodeURIComponent("{}"))", matches.str(2)), signature);
     }
 
-    Stopwatch stopwatch;
-    std::string signature = m_interpreter.execute(R"({}("{}"))", m_sigFunction, matches.str(1));
-    std::string nsignature = m_interpreter.execute(R"({}("{}"))", m_nsigFunction, matches.str(3));
-    std::string url = boost::regex_replace(matches.str(2), boost::regex(R"(&n=(.+?)&)"), fmt::format("&n={}&", nsignature));
-    std::string result = fmt::format("{}&sig={}", m_interpreter.execute(R"(decodeURIComponent("{}"))", url), signature);
-    stopwatch.stop();
-
-    Logger::Debug("Player \"{}\": URL prepared ({} ms)", m_id, stopwatch.ms());
-    return result;
-}
+    if (!boost::regex_search(url, matches, boost::regex(R"(&n=(.+?)&)")))
+        throw YTCPP_LOCATED_ERROR("Couldn't extract nsig from url").withDetails(url);
+    std::string nsignature = m_interpreter.execute(R"({}("{}"))", m_nsigFunction, matches.str(1));
+    return boost::regex_replace(url, boost::regex(R"(&n=(.+?)&)"), fmt::format("&n={}&", nsignature));
+} 
 
 } // namespace ytcpp

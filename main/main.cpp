@@ -80,8 +80,9 @@ int main() {
         SearchResults results = QuerySearch("Hello, World!");
         for (size_t index = 0, size = results.size(); index < size; ++index) {
             Format::List formats(results.at(index).id());
-            if (!formats.empty())
-                fmt::print("{}. {}\n", index + 1, formats.at(0)->url());
+            if (!formats.empty()) {
+                fmt::print("{}. {}\n", index + 1, formats.at(formats.size() / 2)->url());
+            }
         }
     }
     catch (const Error& error) {
