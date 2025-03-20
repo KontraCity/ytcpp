@@ -77,18 +77,7 @@ int main() {
     try {
         Init();
 
-        auto results = QuerySearch("90's Hits - Greatest 1990's Music Hits (Best 90s Songs Playlist)");
-        for (size_t index = 0, size = results.size(); index < size; ++index) {
-            if (results[index].type() == Item::Type::Video) {
-                const Video& video = std::get<Video>(results[index]);
-                fmt::print("{}.V: {}\n", index + 1, video.thumbnails().best().dimensions().resolution());
-            }
-            else if (results[index].type() == Item::Type::Playlist) {
-                const Playlist& playlist = std::get<Playlist>(results[index]);
-                const Thumbnail& thumbnail = playlist.thumbnails().best();
-                fmt::print("{}.P: {}\n", index + 1, thumbnail.dimensions().resolution());
-            }
-        }
+        auto results = RelatedSearch("https://www.youtube.com/watch?v=5rAOyh7YmEc");
     }
     catch (const Error& error) {
         fmt::print(stderr, "Fatal ytcpp::Error!\n");
