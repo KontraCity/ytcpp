@@ -11,18 +11,20 @@ using nlohmann::json;
 namespace ytcpp {
 
 static SearchResults ParseSearchContents(const json& items, SearchResults::Type type, const std::string& query) {
-    SearchResults SearchResults(type, query);
-    SearchResults.reserve(items.size());
+    SearchResults results(type, query);
+    results.reserve(items.size());
 
     for (const json& item : items) {
         // Videos and shows don't have shortBylineText field.
         // They can't be extracted anyway, so are ignored.
-        if (item.contains("compactVideoRenderer") && item.at("compactVideoRenderer").contains("shortBylineText"))
-            SearchResults.emplace_back(item.at("compactVideoRenderer"));
+        if (item.contains("compactVideoRenderer") && item.at("compactVideoRenderer").contains("shortBylineText")) {
+            Video video = Video::ParseCompactVideoRenderer(item.at("compactVideoRenderer"));
+            results.push_back(video);
+        }
     }
 
-    SearchResults.shrink_to_fit();
-    return SearchResults;
+    results.shrink_to_fit();
+    return results;
 }
 
 SearchResults QuerySearch(const std::string& query) {
@@ -59,8 +61,8 @@ SearchResults RelatedSearch(const std::string& videoIdOrUrl) {
     }
 
     try {
-        json contentsObject = json::parse(response.data).at("contents").at("singleColumnWatchNextSearchResults").at("SearchResults")
-            .at("SearchResults").at("contents").at(2).at("shelfRenderer").at("content").at("horizontalListRenderer").at("items");
+        json contentsObject = json::parse(response.data).at("contents").at("singleColumnWatchNextResults").at("results")
+            .at("results").at("contents").at(2).at("shelfRenderer").at("content").at("horizontalListRenderer").at("items");
         return ParseSearchContents(contentsObject, SearchResults::Type::RelatedSearch, videoId);
     }
     catch (const json::exception& error) {

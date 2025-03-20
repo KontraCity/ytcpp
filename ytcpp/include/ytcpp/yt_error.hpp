@@ -12,6 +12,7 @@ public:
     enum class Type {
         InvalidId,
         InvalidQuery,
+        InvalidIterator,
         Unknown,
         Private,
         Unplayable,

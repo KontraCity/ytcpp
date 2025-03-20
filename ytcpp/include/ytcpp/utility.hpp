@@ -36,6 +36,18 @@ namespace Utility {
         throw YtError(YtError::Type::InvalidId, fmt::format("Invalid video ID or URL: \"{}\"", videoIdOrUrl));
     }
 
+    inline std::string ExtractPlaylistId(const std::string& playlistIdOrUrl) {
+        constexpr const char* ValidateId = R"(^(PL[^"&?\/\s]{16,32}$|^OLAK5uy_[^"&?\/\s]{33})$)";
+        constexpr const char* ExtractId = R"(youtube\.com\/(?:playlist\?list=|watch\?v=[^"&?\/\s]{11}&list=)(PL[^"&?\/\s]{16,32}|OLAK5uy_[^"&?\/\s]{33}))";
+
+        boost::smatch matches;
+        if (boost::regex_match(playlistIdOrUrl, boost::regex(ValidateId)))
+            return playlistIdOrUrl;
+        if (boost::regex_search(playlistIdOrUrl, matches, boost::regex(ExtractId)))
+            return matches.str(1);
+        throw YtError(YtError::Type::InvalidId, fmt::format("Invalid playlist ID or URL: \"{}\"", playlistIdOrUrl));
+    }
+
     inline std::string ExtractString(const json& object) {
         if (object.contains("simpleText"))
             return object.at("simpleText");
@@ -46,14 +58,13 @@ namespace Utility {
         return string;
     }
 
-    inline pt::time_duration ExtractDuration(const json& object) {
-        if (!object.contains("lengthText"))
+    inline pt::time_duration ExtractDuration(const std::string& label) {
+        if (label == "LIVE" || label == "UPCOMING")
             return {};
 
-        std::string string = ExtractString(object.at("lengthText"));
         boost::smatch matches;
-        if (!boost::regex_match(string, matches, boost::regex(R"((?:(\d{1,3}):)?(\d{1,2}):(\d{2}))")))
-            throw YTCPP_LOCATED_ERROR("Couldn't extract duration components from duration string").withDetails(string);
+        if (!boost::regex_match(label, matches, boost::regex(R"((?:(\d{1,3}):)?(\d{1,2}):(\d{2}))")))
+            throw YTCPP_LOCATED_ERROR("Couldn't extract duration components from duration string").withDetails(label);
 
         return {
             matches.str(1).empty() ? 0 : std::stoi(matches.str(1)),
@@ -62,9 +73,9 @@ namespace Utility {
         };
     }
 
-    inline uint64_t ExtractViewCount(const json& object) {
+    inline uint64_t ExtractCount(const json& object) {
         std::string string = Utility::ExtractString(object);
-        if (string == "No views")
+        if (string.find("No") != std::string::npos)
             return 0;
 
         std::erase_if(string, [](char character) { return character == ','; });

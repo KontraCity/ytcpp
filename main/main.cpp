@@ -8,6 +8,7 @@
 #include <ytcpp/core/logger.hpp>
 #include <ytcpp/format.hpp>
 #include <ytcpp/innertube.hpp>
+#include <ytcpp/playlist.hpp>
 #include <ytcpp/search.hpp>
 #include <ytcpp/video.hpp>
 #include <ytcpp/yt_error.hpp>
@@ -39,7 +40,6 @@ static void PrintInfo(const Video& video) {
     fmt::print("  Channel:    \"{}\"\n", video.channel());
     fmt::print("  Thumbnails: {}\n", ListThumbnails(video.thumbnails()));
     fmt::print("  Duration:   {}\n", pt::to_simple_string(video.duration()));
-    fmt::print("  View count: {}\n", video.viewCount());
     fmt::print("  Livestream? {}\n", video.isLivestream() ? "yes" : "no");
     fmt::print("  Upcoming?   {}\n", video.isUpcoming() ? "yes" : "no");
 }
@@ -77,12 +77,10 @@ int main() {
     try {
         Init();
 
-        SearchResults results = QuerySearch("Hello, World!");
-        for (size_t index = 0, size = results.size(); index < size; ++index) {
-            Format::List formats(results.at(index).id());
-            if (!formats.empty()) {
-                fmt::print("{}. {}\n", index + 1, formats.at(formats.size() / 2)->url());
-            }
+        Playlist playlist("https://www.youtube.com/playlist?list=PL7DA3D097D6FDBC02");
+        for (Playlist::Iterator iterator = playlist.begin(); iterator; ++iterator) {
+            fmt::print("{:03d}. {}\n", iterator.index(), iterator->title());
+            PrintInfo(*iterator);
         }
     }
     catch (const Error& error) {

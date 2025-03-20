@@ -116,7 +116,7 @@ Format::Format(const json& object)
     if (object.contains("contentLength"))
         m_size.emplace(Utility::ExtractNumber(object.at("contentLength")));
     if (object.contains("approxDurationMs"))
-        m_duration.emplace(0, 0, 0, Utility::ExtractNumber(object.at("approxDurationMs")) * 100);
+        m_duration.emplace(0, 0, 0, Utility::ExtractNumber(object.at("approxDurationMs")) * 1000);
 }
 
 VideoFormat::VideoFormat(const json& object)

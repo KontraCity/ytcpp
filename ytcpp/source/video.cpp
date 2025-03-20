@@ -7,21 +7,38 @@
 
 namespace ytcpp {
 
+Video Video::ParseCompactVideoRenderer(const json& object) {
+    Video video;
+    video.m_id = object.at("videoId");
+    video.m_title = Utility::ExtractString(object.at("title"));
+    video.m_channel = Utility::ExtractString(object.at("shortBylineText"));
+    video.m_thumbnails.parse(object.at("thumbnail").at("thumbnails"));
+    if (object.contains("lengthText"))
+        video.m_duration = Utility::ExtractDuration(Utility::ExtractString(object.at("lengthText")));
+    video.m_isLivestream = !object.contains("lengthText");
+    video.m_isUpcoming = object.contains("upcomingEventData");
+    return video;
+}
+
+Video Video::ParseTileRenderer(const json& object) {
+    const json& tileMetadataRenderer = object.at("metadata").at("tileMetadataRenderer");
+    const json& tileHeaderRenderer = object.at("header").at("tileHeaderRenderer");
+    const std::string& label = Utility::ExtractString(tileHeaderRenderer.at("thumbnailOverlays").at(0).at("thumbnailOverlayTimeStatusRenderer").at("text"));
+
+    Video video;
+    video.m_id = object.at("contentId");
+    video.m_title = Utility::ExtractString(tileMetadataRenderer.at("title"));
+    video.m_channel = Utility::ExtractString(tileMetadataRenderer.at("lines").at(0).at("lineRenderer").at("items").at(0).at("lineItemRenderer").at("text"));
+    video.m_thumbnails.parse(tileHeaderRenderer.at("thumbnail").at("thumbnails"));
+    video.m_duration = Utility::ExtractDuration(label);
+    video.m_isLivestream = label == "LIVE";
+    video.m_isUpcoming = label == "UPCOMING";
+    return video;
+}
+
 Video::Video(const std::string& videoIdOrUrl) {
     m_id = Utility::ExtractVideoId(videoIdOrUrl);
     extract();
-}
-
-Video::Video(const json& object) {
-    m_id = object.at("videoId");
-    m_title = Utility::ExtractString(object.at("title"));
-    m_channel = Utility::ExtractString(object.at("shortBylineText"));
-    m_thumbnails.parse(object.at("thumbnail").at("thumbnails"));
-    m_duration = Utility::ExtractDuration(object);
-    if (object.contains("viewCountText"))
-        m_viewCount = Utility::ExtractViewCount(object.at("viewCountText"));
-    m_isLivestream = !object.contains("lengthText");
-    m_isUpcoming = object.contains("upcomingEventData");
 }
 
 void Video::extract() {
@@ -59,7 +76,6 @@ void Video::extract() {
         m_channel = videoDetails.at("author");
         m_thumbnails.parse(videoDetails.at("thumbnail").at("thumbnails"));
         m_duration = { 0, 0, Utility::ExtractNumber(videoDetails.at("lengthSeconds")) };
-        m_viewCount = Utility::ExtractNumber(videoDetails.at("viewCount"));
         m_isLivestream = videoDetails.at("isLiveContent");
         m_isUpcoming = videoDetails.contains("isUpcoming") && videoDetails.at("isUpcoming");
     }

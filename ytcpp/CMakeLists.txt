@@ -8,6 +8,8 @@ add_library(ytcpp STATIC
     "source/format.cpp"
     "source/innertube.cpp"
     "source/player.cpp"
+    "source/playlist.cpp"
+    "source/search.cpp"
     "source/video.cpp"
- "source/search.cpp")
+)
 target_link_libraries(ytcpp PRIVATE ${Dependencies})
