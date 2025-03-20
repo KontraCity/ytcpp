@@ -92,7 +92,7 @@ namespace Utility {
         if (string.find("No") != std::string::npos)
             return 0;
 
-        std::erase_if(string, [](char character) { return character == ','; });
+        string.erase(std::remove_if(string.begin(), string.end(), [](char character) { return character == ','; }), string.end());
         return std::stoull(string);
     }
 

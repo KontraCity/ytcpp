@@ -34,7 +34,7 @@ namespace Urls {
 static inline std::string GenerateUuid(bool includeDashes = true) {
     std::string result = uuid::to_string(uuid::random_generator_mt19937()());
     if (!includeDashes)
-        std::erase_if(result, [](char character) { return character == '-'; });
+        result.erase(std::remove_if(result.begin(), result.end(), [](char character) { return character == '-'; }));
     return result;
 }
 
