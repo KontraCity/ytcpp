@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <algorithm>
 
 #include <nlohmann/json.hpp>
 using nlohmann::json;
@@ -21,6 +22,20 @@ public:
             reserve(size() + object.size());
             for (const json& thumbnail : object)
                 push_back(thumbnail);
+        }
+        
+        const Thumbnail& best() const {
+            return *std::max_element(
+                begin(), end(),
+                [](const Thumbnail& left, const Thumbnail& right) { return left.dimensions().pixelCount() < right.dimensions().pixelCount(); }
+            );
+        }
+
+        Thumbnail& best() {
+            return *std::max_element(
+                begin(), end(),
+                [](const Thumbnail& left, const Thumbnail& right) { return left.dimensions().pixelCount() < right.dimensions().pixelCount(); }
+            );
         }
     };
 
