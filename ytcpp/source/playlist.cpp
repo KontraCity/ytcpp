@@ -10,6 +10,14 @@ Playlist::Playlist(const std::string& playlistIdOrUrl) {
     extract();
 }
 
+Playlist::Playlist(const json& object) {
+    m_id = object.at("playlistId");
+    m_title = Utility::ExtractString(object.at("title"));
+    m_channel = Utility::ExtractString(object.at("shortBylineText"));
+    m_thumbnails.parse(object.at("thumbnail").at("thumbnails"));
+    m_videoCount = Utility::ExtractCount(object.at("videoCountShortText"));
+}
+
 void Playlist::extract() {
     Curl::Response response = Innertube::CallApi(Client::Type::Tv, "browse", { {"browseId", "VL" + m_id} });
     if (response.code != 200) {
@@ -45,6 +53,8 @@ void Playlist::parseVideos(const json& object) {
     m_videos.reserve(m_videos.size() + object.size());
     for (const json& content : object.at("contents")) {
         Video video = Video::ParseTileRenderer(content.at("tileRenderer"));
+        if (m_thumbnails.empty())
+            m_thumbnails = video.thumbnails();
         m_videos.push_back(video);
     }
     m_videos.shrink_to_fit();
@@ -54,6 +64,8 @@ void Playlist::parseVideos(const json& object) {
 }
 
 Playlist::Iterator::pointer Playlist::discoverVideo(size_t index) {
+    if (m_videos.empty())
+        extract();
     if (m_videos.size() - 1 >= index)
         return m_videos.data() + index;
     if (m_continuation.empty())

@@ -18,8 +18,13 @@ static SearchResults ParseSearchContents(const json& items, SearchResults::Type 
         // Videos and shows don't have shortBylineText field.
         // They can't be extracted anyway, so are ignored.
         if (item.contains("compactVideoRenderer") && item.at("compactVideoRenderer").contains("shortBylineText")) {
-            Video video = Video::ParseCompactVideoRenderer(item.at("compactVideoRenderer"));
-            results.push_back(video);
+            results.emplace_back(std::in_place_type<Video>, Video::ParseCompactVideoRenderer(item.at("compactVideoRenderer")));
+            continue;
+        }
+        
+        if (item.contains("compactPlaylistRenderer")) {
+            results.emplace_back(std::in_place_type<Playlist>, item.at("compactPlaylistRenderer"));
+            continue;
         }
     }
 

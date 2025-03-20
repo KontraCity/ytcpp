@@ -3,11 +3,11 @@
 #include <string>
 #include <vector>
 
-#include "ytcpp/video.hpp"
+#include "ytcpp/item.hpp"
 
 namespace ytcpp {
 
-class SearchResults : public std::vector<Video> {
+class SearchResults : public std::vector<Item> {
 public:
     enum class Type {
         QuerySearch,

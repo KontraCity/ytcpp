@@ -113,6 +113,8 @@ private:
 public:
     Playlist(const std::string& playlistIdOrUrl);
 
+    Playlist(const json& object);
+
 private:
     void extract();
 

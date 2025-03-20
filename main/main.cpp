@@ -77,10 +77,16 @@ int main() {
     try {
         Init();
 
-        Playlist playlist("https://www.youtube.com/playlist?list=PL7DA3D097D6FDBC02");
-        for (Playlist::Iterator iterator = playlist.begin(); iterator; ++iterator) {
-            fmt::print("{:03d}. {}\n", iterator.index(), iterator->title());
-            PrintInfo(*iterator);
+        auto results = QuerySearch("90's Hits - Greatest 1990's Music Hits (Best 90s Songs Playlist)");
+        for (size_t index = 0, size = results.size(); index < size; ++index) {
+            if (results[index].type() == Item::Type::Video) {
+                const Video& video = std::get<Video>(results[index]);
+                fmt::print("{}.V: {}\n", index + 1, video.title());
+            }
+            else if (results[index].type() == Item::Type::Playlist) {
+                const Playlist& playlist = std::get<Playlist>(results[index]);
+                fmt::print("{}.P: {}\n", index + 1, playlist.title());
+            }
         }
     }
     catch (const Error& error) {
