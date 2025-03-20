@@ -24,7 +24,7 @@ namespace Utility {
         return number;
     }
 
-    inline std::string ExtractVideoId(const std::string& videoIdOrUrl) {
+    inline std::string GetVideoId(const std::string& videoIdOrUrl) {
         constexpr const char* ValidateId = R"(^([^"&?\/\s]{11})$)";
         constexpr const char* ExtractId = R"(youtu(?:be\.com|\.be)\/(?:(?:watch(?:_popup)?\?v=)|(?:embed\/)|(?:live\/)|(?:shorts\/))?([^"&?\/\s]{11}))";
 
@@ -33,10 +33,17 @@ namespace Utility {
             return videoIdOrUrl;
         if (boost::regex_search(videoIdOrUrl, matches, boost::regex(ExtractId)))
             return matches.str(1);
+        return {};
+    }
+
+    inline std::string ExtractVideoId(const std::string& videoIdOrUrl) {
+        std::string videoId = GetVideoId(videoIdOrUrl);
+        if (!videoId.empty())
+            return videoId;
         throw YtError(YtError::Type::InvalidId, fmt::format("Invalid video ID or URL: \"{}\"", videoIdOrUrl));
     }
 
-    inline std::string ExtractPlaylistId(const std::string& playlistIdOrUrl) {
+    inline std::string GetPlaylistId(const std::string& playlistIdOrUrl) {
         constexpr const char* ValidateId = R"(^(PL[^"&?\/\s]{16,32}$|^OLAK5uy_[^"&?\/\s]{33})$)";
         constexpr const char* ExtractId = R"(youtube\.com\/(?:playlist\?list=|watch\?v=[^"&?\/\s]{11}&list=)(PL[^"&?\/\s]{16,32}|OLAK5uy_[^"&?\/\s]{33}))";
 
@@ -45,6 +52,13 @@ namespace Utility {
             return playlistIdOrUrl;
         if (boost::regex_search(playlistIdOrUrl, matches, boost::regex(ExtractId)))
             return matches.str(1);
+        return {};
+    }
+
+    inline std::string ExtractPlaylistId(const std::string& playlistIdOrUrl) {
+        std::string playlistId = GetPlaylistId(playlistIdOrUrl);
+        if (!playlistId.empty())
+            return playlistId;
         throw YtError(YtError::Type::InvalidId, fmt::format("Invalid playlist ID or URL: \"{}\"", playlistIdOrUrl));
     }
 
