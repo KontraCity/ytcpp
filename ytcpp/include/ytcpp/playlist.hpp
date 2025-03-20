@@ -127,6 +127,10 @@ public:
         return m_id;
     }
 
+    inline std::string url() const {
+        return "https://www.youtube.com/playlist?list=" + m_id;
+    }
+
     inline const std::string& title() const {
         return m_title;
     }
