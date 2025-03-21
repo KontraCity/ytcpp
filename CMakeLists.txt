@@ -7,7 +7,6 @@ include_directories("ytcpp/include")
 
 find_package(fmt CONFIG REQUIRED)
 find_package(CURL REQUIRED)
-find_package(PkgConfig)
 find_package(nlohmann_json CONFIG REQUIRED)
 set(Dependencies fmt::fmt CURL::libcurl nlohmann_json::nlohmann_json)
 

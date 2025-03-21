@@ -17,7 +17,7 @@ namespace Urls {
 namespace Regex {
     constexpr const char* ExtractPlayerId = R"(https:\\\/\\\/www\.youtube\.com\\\/s\\\/player\\\/(.+?)\\\/)";
     constexpr const char* ExtractSignatureTimestamp = R"(signatureTimestamp:(\d+))";
-    constexpr const char* ExtractSignatureFunction = R"(([a-zA-Z0-9_$]+)\s*=\s*function\(\s*[a-zA-Z0-9_$]+\s*\)\s*\{\s*[a-zA-Z0-9_$]+\s*=\s*[a-zA-Z0-9_$]+\.split\(\s*[a-zA-Z0-9_$\[\]]+\s*\)\s*;([a-zA-Z0-9_$]+)\s*[^\}]+;\s*return\s+[a-zA-Z0-9_$]+\.join\(\s*[a-zA-Z0-9_$\[\]]+\s*\)\s*\})";
+    constexpr const char* ExtractSignatureFunction = R"(([a-zA-Z0-9_$]+)\s*=\s*function\(\s*[a-zA-Z0-9_$]+\s*\)\s*\{\s*[a-zA-Z0-9_$]+\s*=\s*[a-zA-Z0-9_$]+\.split\(\s*[a-zA-Z0-9_$\[\]\"]+\s*\)\s*;([a-zA-Z0-9_$]+)\s*[^\}]+;\s*return\s+[a-zA-Z0-9_$]+\.join\(\s*[a-zA-Z0-9_$\[\]\"]+\s*\)\s*\})";
     constexpr const char* ExtractSignatureObject = R"(var {}=\{{[\s\S]*?\}};)";
     constexpr const char* ExtractNFunction = R"(([a-zA-Z0-9_$]+)\s*=\s*function\(\s*[a-zA-Z0-9_$]+\s*\)\s*\{var [a-zA-Z0-9_$]+=(?:[a-zA-Z0-9_$]+\.split|String\.prototype\.split\.call)\([\s\S]*?return (?:[a-zA-Z0-9_$]+\.join|Array\.prototype\.join\.call)\(.*?\)\s*\};)";
     constexpr const char* ExtractNFunctionSecretVariable = R"(if\s*\(\s*typeof\s*([a-zA-Z0-9_$]+)\s*===\s*"undefined"\s*\))";
