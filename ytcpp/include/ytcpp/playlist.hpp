@@ -147,6 +147,10 @@ public:
         return m_videoCount;
     }
 
+    inline bool empty() const {
+        return m_videos.empty();
+    }
+
     inline Iterator begin() const {
         Playlist* mutableThis = const_cast<Playlist*>(this);
         return { mutableThis };
