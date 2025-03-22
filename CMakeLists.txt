@@ -6,9 +6,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED YES)
 include_directories("ytcpp/include")
 
 find_package(fmt CONFIG REQUIRED)
+find_package(spdlog CONFIG REQUIRED)
 find_package(CURL REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
-set(Dependencies fmt::fmt CURL::libcurl nlohmann_json::nlohmann_json)
+set(Dependencies fmt::fmt spdlog::spdlog CURL::libcurl nlohmann_json::nlohmann_json)
 
 if (UNIX)
     # Unix duktape install
@@ -20,4 +21,7 @@ else()
 endif()
 
 add_subdirectory("ytcpp/")
-add_subdirectory("main/")
+option(BuildExample "Build ytcpp example" YES)
+if (BuildExample)
+    add_subdirectory("example/")
+endif()
