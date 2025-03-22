@@ -18,7 +18,6 @@ namespace uuid = boost::uuids;
 #include <nlohmann/json.hpp>
 using nlohmann::json;
 
-#include "ytcpp/core/cache.hpp"
 #include "ytcpp/core/error.hpp"
 #include "ytcpp/core/logger.hpp"
 #include "ytcpp/core/stopwatch.hpp"
@@ -44,52 +43,7 @@ static inline int GetUnixTimestamp() {
     return static_cast<int>((now - epoch).total_seconds());
 }
 
-static Cache::Auth UpdateAuth() {
-    Cache cache;
-    if (GetUnixTimestamp() + 10 < cache.auth().expiresAt)
-        return cache.auth();
-
-    Stopwatch stopwatch;
-    Client::Fields fields = Client::ClientFields(Client::Type::AuthTokenRefresh, { {"refresh_token", cache.auth().refreshToken} });
-    Curl::Response response = Curl::Post(Urls::AuthToken, fields.headers, fields.data.dump());
-    if (response.code != 200) {
-        throw YTCPP_LOCATED_ERROR(
-            "Couldn't get auth token response [response code: {}]",
-            response.code
-        ).withDump(response.data);
-    }
-
-    try {
-        json responseJson = json::parse(response.data);
-        if (responseJson.contains("error")) {
-            throw YTCPP_LOCATED_ERROR(
-                "Unknown auth token response error [error: \"{}\", response code: {}]",
-                responseJson.at("error").get<std::string>(), response.code
-            ).withDump(response.data);
-        }
-
-        Cache::Auth& auth = cache.auth();
-        auth.accessToken = responseJson.at("access_token");
-        auth.accessTokenType = responseJson.at("token_type");
-        auth.expiresAt = GetUnixTimestamp() + responseJson.at("expires_in").get<int>();
-        stopwatch.stop();
-
-        Logger::Debug("Access token \"{}\" refreshed ({} ms), expires at {}", auth.accessTokenType, stopwatch.ms(), auth.expiresAt);
-        return auth;
-    }
-    catch (const json::exception& error) {
-        throw YTCPP_LOCATED_ERROR(
-            "Couldn't parse auth token response JSON [error id: {}]",
-            error.id
-        ).withDump(response.data);
-    }
-}
-
-void Innertube::Authorize() {
-    Cache cache;
-    if (cache.auth().authorized)
-        return;
-
+static void Authorize(Cache& cache) {
     Client::Fields fields = Client::ClientFields(Client::Type::AuthCode, { {"device_id", GenerateUuid(false)} });
     Curl::Response response = Curl::Post(Urls::AuthCode, fields.headers, fields.data.dump());
     if (response.code != 200) {
@@ -98,7 +52,7 @@ void Innertube::Authorize() {
             response.code
         ).withDump(response.data);
     }
-    
+
     std::string deviceCode, userCode, verificationUrl;
     int interval = 0, expiresIn = 0;
     try {
@@ -163,11 +117,53 @@ void Innertube::Authorize() {
     throw YTCPP_LOCATED_ERROR("Couldn't authorize in {} seconds", expiresIn);
 }
 
+Cache::Auth Innertube::UpdateAuth() {
+    Cache cache;
+    if (!cache.auth().authorized)
+        Authorize(cache);
+    if (GetUnixTimestamp() + 10 < cache.auth().expiresAt)
+        return cache.auth();
+
+    Stopwatch stopwatch;
+    Client::Fields fields = Client::ClientFields(Client::Type::AuthTokenRefresh, { {"refresh_token", cache.auth().refreshToken} });
+    Curl::Response response = Curl::Post(Urls::AuthToken, fields.headers, fields.data.dump());
+    if (response.code != 200) {
+        throw YTCPP_LOCATED_ERROR(
+            "Couldn't get auth token response [response code: {}]",
+            response.code
+        ).withDump(response.data);
+    }
+
+    try {
+        json responseJson = json::parse(response.data);
+        if (responseJson.contains("error")) {
+            throw YTCPP_LOCATED_ERROR(
+                "Unknown auth token response error [error: \"{}\", response code: {}]",
+                responseJson.at("error").get<std::string>(), response.code
+            ).withDump(response.data);
+        }
+
+        Cache::Auth& auth = cache.auth();
+        auth.accessToken = responseJson.at("access_token");
+        auth.accessTokenType = responseJson.at("token_type");
+        auth.expiresAt = GetUnixTimestamp() + responseJson.at("expires_in").get<int>();
+        stopwatch.stop();
+
+        Logger::Debug("Access token \"{}\" refreshed ({} ms), expires at {}", auth.accessTokenType, stopwatch.ms(), auth.expiresAt);
+        return auth;
+    }
+    catch (const json::exception& error) {
+        throw YTCPP_LOCATED_ERROR(
+            "Couldn't parse auth token response JSON [error id: {}]",
+            error.id
+        ).withDump(response.data);
+    }
+}
+
 Curl::Response Innertube::CallApi(Client::Type client, const std::string& endpoint, const json& additionalData) {
     Client::Fields fields = Client::ClientFields(client, additionalData);
-    Cache::Auth auth = Cache().auth();
-    if (auth.authorized) {
-        auth = UpdateAuth();
+    if (AuthEnabled()) {
+        Cache::Auth auth = UpdateAuth();
         fields.headers.push_back(fmt::format(
             "Authorization: {} {}",
             auth.accessTokenType, auth.accessToken

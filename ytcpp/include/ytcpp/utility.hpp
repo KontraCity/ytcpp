@@ -102,6 +102,8 @@ namespace Utility {
             return;
 
         std::string reason = object.contains("reason") ? object.at("reason") : "";
+        if (status == "LOGIN_REQUIRED")
+            throw YtError(YtError::Type::LoginRequired, reason);
         if (status == "UNPLAYABLE")
             throw YtError(YtError::Type::Unplayable, reason);
         if (reason == "This video is private")

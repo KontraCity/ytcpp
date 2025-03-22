@@ -1,8 +1,7 @@
-#include <spdlog/sinks/stdout_color_sinks.h>
-
 #include <fmt/format.h>
 
-#include <ytcpp/core/curl.hpp>
+#include <spdlog/sinks/stdout_color_sinks.h>
+
 #include <ytcpp/core/error.hpp>
 #include <ytcpp/core/js.hpp>
 #include <ytcpp/core/logger.hpp>
@@ -22,11 +21,14 @@ static void Init() {
     Logger::SetLevel(spdlog::level::debug);
 
     Curl::SetProxyUrl("socks5://localhost:2081");
-    Innertube::Authorize();
+    Innertube::AuthEnabled(true);
 }
 
 static std::string ListThumbnails(const Thumbnail::List& thumbnails) {
     std::string result;
+    if (thumbnails.empty())
+        return "none";
+
     for (size_t index = 0, size = thumbnails.size(); index < size; ++index) {
         result += thumbnails[index].dimensions().resolution();
         result += index + 1 == size ? "" : ", ";
@@ -42,6 +44,14 @@ static void PrintInfo(const Video& video) {
     fmt::print("  Duration:   {}\n", pt::to_simple_string(video.duration()));
     fmt::print("  Livestream? {}\n", video.isLivestream() ? "yes" : "no");
     fmt::print("  Upcoming?   {}\n", video.isUpcoming() ? "yes" : "no");
+}
+
+static void PrintInfo(const Playlist& playlist) {
+    fmt::print("Info of playlist {}:\n", playlist.id());
+    fmt::print("  Title:       \"{}\"\n", playlist.title());
+    fmt::print("  Channel:     \"{}\"\n", playlist.channel());
+    fmt::print("  Thumbnails:  {}\n", ListThumbnails(playlist.thumbnails()));
+    fmt::print("  Video count: {}\n", playlist.videoCount());
 }
 
 static void PrintFormats(const std::string& videoIdOrUrl) {
@@ -76,8 +86,8 @@ static void PrintFormats(const std::string& videoIdOrUrl) {
 int main() {
     try {
         Init();
-
-        auto results = RelatedSearch("https://www.youtube.com/watch?v=5rAOyh7YmEc");
+        PrintInfo(Video{ std::string("https://www.youtube.com/watch?v=Txh-DHuq3zE") });
+        PrintInfo(Playlist{ std::string("https://www.youtube.com/watch?v=ekr2nIex040&list=PLOHoVaTp8R7d3L_pjuwIa6nRh4tH5nI4x") });
     }
     catch (const Error& error) {
         fmt::print(stderr, "Fatal ytcpp::Error!\n");

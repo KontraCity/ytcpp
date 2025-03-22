@@ -17,6 +17,7 @@ public:
         Private,
         Unplayable,
         Unavailable,
+        LoginRequired,
     };
 
 public:
@@ -24,7 +25,10 @@ public:
         switch (type) {
             case Type::InvalidId:
                 return "Invalid item ID";
-            default:
+            case Type::InvalidQuery:
+                return "Invalid search query";
+            case Type::InvalidIterator:
+                return "Invalid iterator";
             case Type::Unknown:
                 return "Unknown error";
             case Type::Private:
@@ -33,6 +37,10 @@ public:
                 return "Unplayable item";
             case Type::Unavailable:
                 return "Unavailable item";
+            case Type::LoginRequired:
+                return "Login required";
+            default:
+                return "<unknown error type>";
         }
     }
 
