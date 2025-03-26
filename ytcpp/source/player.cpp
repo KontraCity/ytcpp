@@ -20,7 +20,7 @@ namespace Regex {
     constexpr const char* ExtractSignatureFunction = R"(([a-zA-Z0-9_$]+)\s*=\s*function\(\s*[a-zA-Z0-9_$]+\s*\)\s*\{\s*[a-zA-Z0-9_$]+\s*=\s*[a-zA-Z0-9_$]+\.split\(\s*[a-zA-Z0-9_$\[\]\"]+\s*\)\s*;([a-zA-Z0-9_$]+)\s*[^\}]+;\s*return\s+[a-zA-Z0-9_$]+\.join\(\s*[a-zA-Z0-9_$\[\]\"]+\s*\)\s*\})";
     constexpr const char* ExtractSignatureObject = R"(var {}=\{{[\s\S]*?\}};)";
     constexpr const char* ExtractNFunction = R"(([a-zA-Z0-9_$]+)\s*=\s*function\(\s*[a-zA-Z0-9_$]+\s*\)\s*\{var [a-zA-Z0-9_$]+=(?:[a-zA-Z0-9_$]+\.split|String\.prototype\.split\.call)\([\s\S]*?return (?:[a-zA-Z0-9_$]+\.join|Array\.prototype\.join\.call)\(.*?\)\s*\};)";
-    constexpr const char* ExtractNFunctionSecretVariable = R"(if\s*\(\s*typeof\s*([a-zA-Z0-9_$]+)\s*===\s*"undefined"\s*\))";
+    constexpr const char* ExtractNFunctionSecretVariable = R"(if\s*\(\s*typeof\s*([a-zA-Z0-9_$]+)\s*===\s*([a-zA-Z0-9_$\"]+)[\d\[\]]*\s*\))";
 }
 
 std::string Player::GetPlayerId() {
@@ -66,8 +66,20 @@ Player::Player(const std::string& id)
     m_interpreter.execute(nFunctionCode);
     m_nsigFunction = matches.str(1);
 
-    if (boost::regex_search(nFunctionCode, matches, boost::regex(Regex::ExtractNFunctionSecretVariable)))
-        m_interpreter.execute("var {} = 0;", matches.str(1));
+    if (boost::regex_search(nFunctionCode, matches, boost::regex(Regex::ExtractNFunctionSecretVariable))) {
+        std::string secretVariableName = matches.str(1);
+        std::string referenceVariableName = matches.str(2);
+
+        if (!boost::regex_search(response.data, matches, boost::regex(fmt::format(R"(var {}=.+?;)", secretVariableName))))
+            throw YTCPP_LOCATED_ERROR("Couldn't extract secret variable definition from player code").withDump(response.data);
+        m_interpreter.execute(matches.str(0));
+
+        if (referenceVariableName != "\"undefined\"") {
+            if (!boost::regex_search(response.data, matches, boost::regex(fmt::format(R"(var {}=.+?\.split\(";"\))", referenceVariableName))))
+                throw YTCPP_LOCATED_ERROR("Couldn't extract reference variable definition from player code").withDump(response.data);
+            m_interpreter.execute(matches.str(0));
+        }
+    }
     stopwatch.stop();
 
     Logger::Debug("Player \"{}\": Initialized ({} ms, sigfunc: {}, nsigfunc: {})", m_id, stopwatch.ms(), m_sigFunction, m_nsigFunction);

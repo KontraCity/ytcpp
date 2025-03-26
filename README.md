@@ -184,10 +184,12 @@ static void ShowRelatedSearchResults(const std::string& videoId) {
 }
 ```
 #### Error handling
-* `ytcpp::YtError` is associated with YouTube errors. (video is private, playlist ID is invalid, etc.)
-* `ytcpp::Error` is thrown when something generally goes wrong. (API couldn't be accessed, response couldn't be parsed, etc.)
+* `ytcpp::Error` is thrown when something generally goes wrong. (API couldn't be accessed, response couldn't be parsed, etc).
+* `ytcpp::Js::Error` is thrown when JavaScript exception occurs in JS interpreter.
+* `ytcpp::YtError` is associated with YouTube errors. (video is private, playlist ID is invalid, etc).
 ```C++
 #include <ytcpp/core/error.hpp>
+#include <ytcpp/core/js.hpp>
 #include <ytcpp/yt_error.hpp>
 int main() {
     try {
@@ -224,6 +226,11 @@ int main() {
     }
     catch (const ytcpp::Error& error) {
         std::cerr << "Fatal error occured!" << '\n';
+        std::cerr << error.what() << '\n';
+        return 1;
+    }
+    catch (const ytcpp::Js::Error& error) {
+        std::cerr << "JS error occured!" << '\n';
         std::cerr << error.what() << '\n';
         return 1;
     }

@@ -102,6 +102,7 @@ static void ShowRelatedSearchResults(const std::string& videoId) {
 }
 
 #include <ytcpp/core/error.hpp>
+#include <ytcpp/core/js.hpp>
 #include <ytcpp/yt_error.hpp>
 int main() {
     try {
@@ -138,6 +139,11 @@ int main() {
     }
     catch (const ytcpp::Error& error) {
         std::cerr << "Fatal error occured!" << '\n';
+        std::cerr << error.what() << '\n';
+        return 1;
+    }
+    catch (const ytcpp::Js::Error& error) {
+        std::cerr << "JS error occured!" << '\n';
         std::cerr << error.what() << '\n';
         return 1;
     }
